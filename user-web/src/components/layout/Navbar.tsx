@@ -50,7 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md shadow-sm border-b border-slate-200/80 dark:border-slate-800">
+    <nav className="fixed inset-x-0 top-0 z-50 bg-surface/95 dark:bg-surface-dark/95 backdrop-blur-md border-b-2 border-slate-900/10 dark:border-white/10">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-4">
@@ -67,10 +67,10 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
               to="/"
               className="flex items-center gap-2 group"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white text-xs font-bold shadow-sm shadow-primary-900/20 group-hover:bg-primary-700 transition-colors">
-                HB
+              <span className="flex h-8 w-8 items-center justify-center bg-primary-600 text-white text-[10px] font-bold group-hover:bg-primary-700 transition-colors">
+                EZ
               </span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              <span className="font-display text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                 EzyMed
               </span>
             </Link>
@@ -137,13 +137,13 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 </button>
                 <Link
                   to="/login"
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-secondary px-3 py-2 rounded-md text-sm font-medium transition"
+                  className="text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-semibold uppercase tracking-wide transition"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md shadow-primary-600/20 dark:shadow-primary-900/30 transition"
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider transition"
                 >
                   Sign up
                 </Link>

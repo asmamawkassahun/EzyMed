@@ -4,43 +4,45 @@
 
 /* Brand + surfaces (Tailwind v4) — before body so CSS variables resolve */
 @theme inline {
-  --color-surface: #f1f5f9;
-  --color-surface-dark: #020617;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
 
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
-  --color-primary-950: #022c22;
+  --color-surface: #f0eef5;
+  --color-surface-dark: #08070d;
 
-  --color-primary: #059669;
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+  --color-primary-950: #2e1065;
 
-  --color-secondary: #0ea5e9;
-  --color-secondary-light: #7dd3fc;
-  --color-secondary-lighter: #e0f2fe;
+  --color-primary: #7c3aed;
 
-  --color-accent: #5eead4;
-  --color-accent-light: #ccfbf1;
+  --color-secondary: #f43f5e;
+  --color-secondary-light: #fb7185;
+  --color-secondary-lighter: #ffe4e6;
+
+  --color-accent: #e879f9;
+  --color-accent-light: #fae8ff;
 }
 
 body {
   margin: 0;
-  font-family:
-    "Plus Jakarta Sans",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.35s ease;
   background-color: var(--color-surface);
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
 
 body.dark {
@@ -199,6 +201,42 @@ html {
   animation-delay: 350ms;
 }
 
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-auth-card {
+  animation: auth-card-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes auth-orbs {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(4%, -3%) scale(1.05);
+    opacity: 0.65;
+  }
+}
+
+.auth-ambient-orb {
+  animation: auth-orbs 14s ease-in-out infinite;
+}
+
+.auth-ambient-orb-delay {
+  animation: auth-orbs 18s ease-in-out infinite;
+  animation-delay: -6s;
+}
+
 @keyframes hero-mesh-shift {
   0%,
   100% {
@@ -212,11 +250,11 @@ html {
 .hero-mesh {
   background: linear-gradient(
     -45deg,
-    rgba(5, 150, 105, 0.22),
-    rgba(14, 165, 233, 0.18),
-    rgba(5, 150, 105, 0.12),
-    rgba(14, 165, 233, 0.22),
-    rgba(100, 116, 139, 0.08)
+    rgba(124, 58, 237, 0.22),
+    rgba(244, 63, 94, 0.14),
+    rgba(124, 58, 237, 0.1),
+    rgba(232, 121, 249, 0.16),
+    rgba(100, 116, 139, 0.06)
   );
   background-size: 400% 400%;
   animation: hero-mesh-shift 12s ease infinite;
@@ -225,13 +263,44 @@ html {
 .dark .hero-mesh {
   background: linear-gradient(
     -45deg,
-    rgba(16, 185, 129, 0.35),
-    rgba(56, 189, 248, 0.2),
-    rgba(5, 150, 105, 0.25),
-    rgba(14, 165, 233, 0.22),
+    rgba(167, 139, 250, 0.28),
+    rgba(244, 63, 94, 0.18),
+    rgba(124, 58, 237, 0.22),
+    rgba(232, 121, 249, 0.12),
     rgba(15, 23, 42, 0.5)
   );
   background-size: 400% 400%;
+}
+
+/* Auth: subtle grid on main area */
+.auth-page-grid {
+  background-color: transparent;
+  background-image:
+    linear-gradient(
+      to right,
+      rgb(124 58 237 / 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(124 58 237 / 0.06) 1px,
+      transparent 1px
+    );
+  background-size: 48px 48px;
+}
+
+.dark .auth-page-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      rgb(167 139 250 / 0.07) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(167 139 250 / 0.07) 1px,
+      transparent 1px
+    );
 }
 
 @keyframes hero-orbit {
@@ -311,6 +380,20 @@ html {
   }
 }
 
+@keyframes shimmer-line {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.auth-shimmer-sheen {
+  animation: shimmer-line 11s ease-in-out infinite;
+}
+
 .hero-shimmer {
   animation: hero-shimmer 4s ease-in-out infinite;
 }
@@ -322,12 +405,29 @@ html {
   .hero-pulse-ring,
   .hero-pulse-ring-delay,
   .animate-hero-float-alt,
-  .hero-shimmer {
+  .hero-shimmer,
+  .auth-ambient-orb,
+  .auth-ambient-orb-delay,
+  .animate-auth-card,
+  .auth-shimmer-sheen {
     animation: none !important;
   }
 
   .hero-connect-path {
     stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+
+  .stagger-rise > * {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+
+  .animate-soft-float,
+  .animate-pulse-slow,
+  .animate-rise-in,
+  .animate-badge-bounce,
+  .animate-badge-bounce-delay {
     animation: none !important;
   }
 }
