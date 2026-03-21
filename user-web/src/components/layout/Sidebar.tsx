@@ -1,0 +1,188 @@
+import React, { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home,
+  User,
+  X,
+  ShoppingCart,
+  ShoppingBag,
+  Stethoscope,
+  CalendarClock,
+  BriefcaseMedical,
+  ClipboardCheck,
+  Activity,
+} from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useShopStore } from "../../stores/shop.store";
+import { useChatStore } from "../../stores/chat.store";
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const location = useLocation();
+  const { profile, user } = useAuth();
+  const messageCount = useChatStore((state) => state.unreadCount);
+  const fetchUnreadCount = useChatStore((state) => state.fetchUnreadCount);
+  const myOrders = useShopStore((state) => state.myOrders);
+  const fetchOrders = useShopStore((state) => state.fetchOrders);
+  const orderCount = myOrders.filter(
+    (order) => order.order_status === "pending",
+  ).length;
+
+  const menuItems = [
+    {
+      path: "/dashboard",
+      icon: Home,
+      label: "Dashboard",
+      roles: ["patient", "doctor", "pharmacy", "admin"],
+    },
+    { path: "/shop", icon: ShoppingBag, label: "Shop", roles: ["patient"] },
+    { path: "/orders", icon: ShoppingCart, label: "Orders", roles: ["patient"] },
+    {
+      path: "/manage/products",
+      icon: ShoppingBag,
+      label: "Manage Products",
+      roles: ["pharmacy", "admin"],
+    },
+    {
+      path: "/manage/orders",
+      icon: ShoppingCart,
+      label: "Manage Orders",
+      roles: ["pharmacy", "admin"],
+    },
+    {
+      path: "/doctors",
+      icon: Stethoscope,
+      label: "Doctors",
+      roles: ["patient"],
+    },
+    {
+      path: "/health-tracker",
+      icon: Activity,
+      label: "Health Tracker",
+      roles: ["patient"],
+    },
+    {
+      path: "/bookings",
+      icon: CalendarClock,
+      label: "Bookings",
+      roles: ["patient"],
+    },
+    {
+      path: "/doctor/services",
+      icon: BriefcaseMedical,
+      label: "My Services",
+      roles: ["doctor", "admin"],
+    },
+    {
+      path: "/doctor/bookings",
+      icon: ClipboardCheck,
+      label: "Doctor Bookings",
+      roles: ["doctor", "admin"],
+    },
+    {
+      path: "/doctor/patients",
+      icon: User,
+      label: "Patient Readings",
+      roles: ["doctor", "admin"],
+    },
+    {
+      path: "/profile",
+      icon: User,
+      label: "Profile",
+      roles: ["patient", "doctor", "pharmacy", "admin"],
+    },
+  ];
+
+  const filteredMenuItems = menuItems.filter(
+    (item) => !profile || item.roles.includes(profile.role),
+  );
+
+  useEffect(() => {
+    if (user && profile?.role === "patient") {
+      fetchOrders("my");
+    }
+  }, [user, profile?.role, fetchOrders]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "patient") {
+      return;
+    }
+
+    fetchUnreadCount();
+  }, [user, profile?.role, fetchUnreadCount]);
+
+  const handleItemClick = () => {
+    // Only close the drawer on mobile widths to avoid desktop route flicker.
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  };
+
+  return (
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        ></div>
+      )}
+
+      <aside
+        className={`fixed lg:sticky top-16 lg:top-0 left-0 z-40 h-[calc(100vh-4rem)] lg:h-full transition-transform duration-200 lg:transition-none ${
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <div className="h-full px-4 py-1 overflow-y-auto scrollbar-hide bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-64">
+          <div className="flex justify-end px-2 py-2 lg:hidden">
+            <button
+              onClick={onClose}
+              className="cursor-pointer lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+              aria-label="Close sidebar"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
+
+          <nav className="space-y-2 pt-1 lg:pt-3">
+            {filteredMenuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={handleItemClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-primary text-white dark:bg-secondary"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                  {item.path === "/orders" && orderCount > 0 && (
+                    <span className="ml-auto bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {orderCount}
+                    </span>
+                  )}
+                  {item.path === "/chat" && messageCount > 0 && (
+                    <span className="ml-auto bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {messageCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
+    </>
+  );
+};
+
+export default Sidebar;

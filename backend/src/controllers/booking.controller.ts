@@ -1,0 +1,1620 @@
+import { Request, Response } from "express";
+import { supabaseAdmin } from "../configs/supabase.js";
+import { AuthRequest } from "../middlewares/auth.middleware.js";
+import { uploadFile } from "./upload.controller.js";
+import { checkDirectInteractionAccess } from "../services/booking-access.service.js";
+import { sendMail } from "../services/email.service.js";
+import { ensureBookingTransitionAllowed } from "../services/booking-lifecycle.service.js";
+import { DateTime } from "luxon";
+
+type ProfileRole = "patient" | "doctor" | "admin" | "counselor" | string;
+
+const ACTIVE_BOOKING_STATUSES = [
+  "pending_payment",
+  "pending_confirmation",
+  "confirmed",
+];
+
+const parsePagination = (query: Request["query"]) => {
+  const page = Number(query.page || 1);
+  const limit = Number(query.limit || 10);
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  return { page, from, to };
+};
+
+const getDayBoundsUtc = (dateInput?: string) => {
+  const base = dateInput ? new Date(`${dateInput}T00:00:00.000Z`) : new Date();
+  const start = new Date(
+    Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate()),
+  );
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+};
+
+const attachParticipantProfiles = async (bookings: any[]) => {
+  if (!bookings.length) return bookings;
+
+  const participantIds = Array.from(
+    new Set(
+      bookings.flatMap((booking) => [
+        booking.patient_id || booking.patient_id,
+        booking.doctor_id,
+      ]),
+    ),
+  ).filter(Boolean) as string[];
+
+  if (!participantIds.length) return bookings;
+
+  const { data: users, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, full_name, email")
+    .in("id", participantIds);
+
+  if (error || !users?.length) return bookings;
+
+  const usersMap = new Map((users || []).map((user: any) => [user.id, user]));
+
+  return bookings.map((booking) => ({
+    ...booking,
+    patient_id: booking.patient_id || booking.patient_id, // Ensure patient_id exists
+    patient_profile:
+      usersMap.get(booking.patient_id || booking.patient_id) || null,
+    doctor_profile: usersMap.get(booking.doctor_id) || null,
+  }));
+};
+
+const attachPendingPayments = async (bookings: any[]) => {
+  if (!bookings.length) return bookings;
+
+  const bookingIds = bookings.map((booking) => booking.id);
+
+  const { data: payments } = await supabaseAdmin
+    .from("booking_payments")
+    .select(
+      "id, booking_id, amount, currency, payment_method, transaction_reference, proof_document_id, status, created_at",
+    )
+    .eq("status", "pending_review")
+    .in("booking_id", bookingIds)
+    .order("created_at", { ascending: false });
+
+  const paymentMap = new Map<string, any>();
+  for (const payment of payments || []) {
+    if (!paymentMap.has(payment.booking_id)) {
+      paymentMap.set(payment.booking_id, payment);
+    }
+  }
+
+  return bookings.map((booking) => ({
+    ...booking,
+    pending_payment: paymentMap.get(booking.id) || null,
+  }));
+};
+
+const writeBookingHistory = async (
+  bookingId: string,
+  actorId: string,
+  fromStatus: string | null,
+  toStatus: string,
+  note?: string,
+) => {
+  const { error } = await supabaseAdmin.from("booking_status_history").insert([
+    {
+      booking_id: bookingId,
+      actor_id: actorId,
+      from_status: fromStatus,
+      to_status: toStatus,
+      note: note || null,
+    },
+  ]);
+
+  if (error) {
+    console.warn("booking status history insert warning:", error.message);
+  }
+};
+
+const invalidTransitionResponse = (
+  res: Response,
+  action: Parameters<typeof ensureBookingTransitionAllowed>[0],
+  fromStatus: string,
+) => {
+  const transition = ensureBookingTransitionAllowed(action, fromStatus);
+  if (transition.ok) return null;
+  return res.status(transition.status).json({
+    error: transition.error,
+    code: transition.code,
+  });
+};
+
+const notifyBookingParticipants = async (
+  bookingId: string,
+  subject: string,
+  htmlBuilder: (patientName: string, doctorName: string) => string,
+) => {
+  try {
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("patient_id, doctor_id")
+      .eq("id", bookingId)
+      .maybeSingle();
+
+    if (bookingError || !booking) return;
+
+    const { data: users } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .in("id", [booking.patient_id, booking.doctor_id]);
+
+    const patient = (users || []).find((u: any) => u.id === booking.patient_id);
+    const doctor = (users || []).find((u: any) => u.id === booking.doctor_id);
+    const patientName = patient?.full_name || "Patient";
+    const doctorName = doctor?.full_name || "Doctor";
+    const html = htmlBuilder(patientName, doctorName);
+
+    const recipients = [patient?.email, doctor?.email].filter(
+      Boolean,
+    ) as string[];
+    for (const to of recipients) {
+      await sendMail(to, subject, html);
+    }
+  } catch (e) {
+    console.warn("notifyBookingParticipants warning:", e);
+  }
+};
+
+export const confirmBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const actorId = req.user!.id;
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const access = await ensureBookingParticipantOrAdmin(id, actorId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+    const accessProfile = access.profile!;
+    const accessBooking = access.booking!;
+
+    const profileRole = accessProfile.role;
+    const isAdmin = profileRole === "admin";
+    const isDoctor = accessBooking.doctor_id === actorId;
+    if (!isAdmin && !isDoctor) {
+      return res
+        .status(403)
+        .json({ error: "Only assigned doctor or admin can confirm booking" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status, payment_method, payment_status")
+      .eq("id", id)
+      .maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const invalidConfirm = invalidTransitionResponse(
+      res,
+      "confirm",
+      booking.status,
+    );
+    if (invalidConfirm) return invalidConfirm;
+
+    if (
+      booking.payment_method === "proof_upload" &&
+      booking.payment_status !== "paid"
+    ) {
+      return res.status(400).json({
+        error:
+          "Proof-upload bookings must have paid status before confirmation",
+      });
+    }
+
+    const updates: Record<string, any> = {
+      status: "confirmed",
+      confirmed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: updatedBooking, error: updateError } = await supabaseAdmin
+      .from("bookings")
+      .update(updates)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updateError) throw updateError;
+
+    await writeBookingHistory(
+      id,
+      actorId,
+      booking.status,
+      "confirmed",
+      note || "Booking confirmed",
+    );
+    console.info(
+      `[booking-transition] booking=${id} actor=${actorId} from=${booking.status} to=confirmed`,
+    );
+
+    await notifyBookingParticipants(
+      id,
+      "Booking Confirmed - EzyMed",
+      (patientName, doctorName) =>
+        `<p>Hello ${patientName} and ${doctorName},</p><p>Your booking has been <strong>confirmed</strong>.</p>`,
+    );
+
+    return res.json({ booking: updatedBooking });
+  } catch (err: any) {
+    console.error("confirmBooking error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to confirm booking" });
+  }
+};
+
+export const cancelBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const actorId = req.user!.id;
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const access = await ensureBookingParticipantOrAdmin(id, actorId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+    const accessProfile = access.profile!;
+    const accessBooking = access.booking!;
+
+    const profileRole = accessProfile.role;
+    const isAdmin = profileRole === "admin";
+    const isDoctor = accessBooking.doctor_id === actorId;
+    const isPatient = accessBooking.patient_id === actorId;
+
+    if (!isAdmin && !isDoctor && !isPatient) {
+      return res
+        .status(403)
+        .json({ error: "Not allowed to cancel this booking" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status")
+      .eq("id", id)
+      .maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const invalidCancel = invalidTransitionResponse(
+      res,
+      "cancel",
+      booking.status,
+    );
+    if (invalidCancel) return invalidCancel;
+
+    const { data: updatedBooking, error: updateError } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updateError) throw updateError;
+
+    await writeBookingHistory(
+      id,
+      actorId,
+      booking.status,
+      "cancelled",
+      reason ? `Cancelled: ${reason}` : "Booking cancelled",
+    );
+    console.info(
+      `[booking-transition] booking=${id} actor=${actorId} from=${booking.status} to=cancelled reason=${reason || "none"}`,
+    );
+
+    await notifyBookingParticipants(
+      id,
+      "Booking Cancelled - EzyMed",
+      (patientName, doctorName) =>
+        `<p>Hello ${patientName} and ${doctorName},</p><p>This booking has been <strong>cancelled</strong>.</p><p>${reason ? `Reason: ${reason}` : ""}</p>`,
+    );
+
+    return res.json({ booking: updatedBooking });
+  } catch (err: any) {
+    console.error("cancelBooking error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to cancel booking" });
+  }
+};
+
+export const completeBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const actorId = req.user!.id;
+    const { id } = req.params;
+    const { note, consultation_notes, prescription_text } = req.body;
+
+    const access = await ensureBookingParticipantOrAdmin(id, actorId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+    const accessProfile = access.profile!;
+    const accessBooking = access.booking!;
+
+    const profileRole = accessProfile.role;
+    const isAdmin = profileRole === "admin";
+    const isDoctor = accessBooking.doctor_id === actorId;
+    if (!isAdmin && !isDoctor) {
+      return res
+        .status(403)
+        .json({ error: "Only assigned doctor or admin can complete booking" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status")
+      .eq("id", id)
+      .maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const invalidComplete = invalidTransitionResponse(
+      res,
+      "complete",
+      booking.status,
+    );
+    if (invalidComplete) return invalidComplete;
+
+    const { data: updatedBooking, error: updateError } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        consultation_notes: consultation_notes || null,
+        prescription_text: prescription_text || null,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updateError) throw updateError;
+
+    await writeBookingHistory(
+      id,
+      actorId,
+      booking.status,
+      "completed",
+      note || "Booking completed",
+    );
+    console.info(
+      `[booking-transition] booking=${id} actor=${actorId} from=${booking.status} to=completed`,
+    );
+
+    await notifyBookingParticipants(
+      id,
+      "Booking Completed - EzyMed",
+      (patientName, doctorName) =>
+        `<p>Hello ${patientName} and ${doctorName},</p><p>Your booking has been marked as <strong>completed</strong>.</p>`,
+    );
+
+    return res.json({ booking: updatedBooking });
+  } catch (err: any) {
+    console.error("completeBooking error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to complete booking" });
+  }
+};
+
+export const rescheduleBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const actorId = req.user!.id;
+    const { id } = req.params;
+    const { scheduled_start, scheduled_end, note } = req.body;
+
+    if (!scheduled_start || !scheduled_end) {
+      return res
+        .status(400)
+        .json({ error: "scheduled_start and scheduled_end are required" });
+    }
+
+    const start = new Date(scheduled_start);
+    const end = new Date(scheduled_end);
+    if (
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime()) ||
+      end <= start
+    ) {
+      return res.status(400).json({ error: "Invalid schedule range" });
+    }
+
+    const access = await ensureBookingParticipantOrAdmin(id, actorId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+    const accessProfile = access.profile!;
+    const accessBooking = access.booking!;
+
+    const isAdmin = accessProfile.role === "admin";
+    const isDoctor = accessBooking.doctor_id === actorId;
+    const isPatient = accessBooking.patient_id === actorId;
+    if (!isAdmin && !isDoctor && !isPatient) {
+      return res
+        .status(403)
+        .json({ error: "Not allowed to reschedule this booking" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, doctor_id, availability_id, status, payment_status")
+      .eq("id", id)
+      .maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const invalidReschedule = invalidTransitionResponse(
+      res,
+      "reschedule",
+      booking.status,
+    );
+    if (invalidReschedule) return invalidReschedule;
+
+    if (booking.availability_id) {
+      const { data: availability, error: availabilityError } =
+        await supabaseAdmin
+          .from("doctor_service_availability")
+          .select(
+            "id, day_of_week, specific_date, start_time, end_time, is_active, timezone",
+          )
+          .eq("id", booking.availability_id)
+          .maybeSingle();
+      if (availabilityError) throw availabilityError;
+      if (availability && availability.is_active) {
+        if (!checkAvailabilityWindow(availability, start, end)) {
+          return res
+            .status(400)
+            .json({ error: "New schedule is outside availability window" });
+        }
+      }
+    }
+
+    const { data: conflict, error: conflictError } = await supabaseAdmin
+      .from("bookings")
+      .select("id")
+      .eq("doctor_id", booking.doctor_id)
+      .neq("id", id)
+      .in("status", ACTIVE_BOOKING_STATUSES)
+      .lt("scheduled_start", scheduled_end)
+      .gt("scheduled_end", scheduled_start)
+      .limit(1)
+      .maybeSingle();
+    if (conflictError) throw conflictError;
+    if (conflict) {
+      return res
+        .status(409)
+        .json({ error: "New schedule conflicts with another booking" });
+    }
+
+    const nextStatus =
+      booking.payment_status === "paid"
+        ? "pending_confirmation"
+        : "pending_payment";
+    const { data: updatedBooking, error: updateError } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        scheduled_start,
+        scheduled_end,
+        status: nextStatus,
+        confirmed_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updateError) throw updateError;
+
+    await writeBookingHistory(
+      id,
+      actorId,
+      booking.status,
+      nextStatus,
+      note || "Booking rescheduled",
+    );
+    console.info(
+      `[booking-transition] booking=${id} actor=${actorId} from=${booking.status} to=${nextStatus} note=reschedule`,
+    );
+
+    await notifyBookingParticipants(
+      id,
+      "Booking Rescheduled - EzyMed",
+      (patientName, doctorName) =>
+        `<p>Hello ${patientName} and ${doctorName},</p><p>The booking has been <strong>rescheduled</strong>.</p><p>New time: ${scheduled_start} to ${scheduled_end}</p>`,
+    );
+
+    return res.json({ booking: updatedBooking });
+  } catch (err: any) {
+    console.error("rescheduleBooking error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to reschedule booking" });
+  }
+};
+
+export const markBookingNoShow = async (req: AuthRequest, res: Response) => {
+  try {
+    const actorId = req.user!.id;
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const access = await ensureBookingParticipantOrAdmin(id, actorId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+    const accessProfile = access.profile!;
+    const accessBooking = access.booking!;
+
+    const isAdmin = accessProfile.role === "admin";
+    const isDoctor = accessBooking.doctor_id === actorId;
+    if (!isAdmin && !isDoctor) {
+      return res
+        .status(403)
+        .json({ error: "Only assigned doctor or admin can mark no-show" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status, scheduled_end")
+      .eq("id", id)
+      .maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    const invalidNoShow = invalidTransitionResponse(
+      res,
+      "no_show",
+      booking.status,
+    );
+    if (invalidNoShow) return invalidNoShow;
+
+    const graceMs = 15 * 60 * 1000;
+    if (Date.now() < new Date(booking.scheduled_end).getTime() + graceMs) {
+      return res.status(400).json({
+        error: "Cannot mark no-show before booking end window",
+        code: "BOOKING_NO_SHOW_WINDOW_NOT_REACHED",
+      });
+    }
+
+    const { data: updatedBooking, error: updateError } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        status: "no_show",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updateError) throw updateError;
+
+    await writeBookingHistory(
+      id,
+      actorId,
+      booking.status,
+      "no_show",
+      note || "Marked as no-show",
+    );
+    console.info(
+      `[booking-transition] booking=${id} actor=${actorId} from=${booking.status} to=no_show`,
+    );
+
+    await notifyBookingParticipants(
+      id,
+      "Booking No-Show - EzyMed",
+      (patientName, doctorName) =>
+        `<p>Hello ${patientName} and ${doctorName},</p><p>This booking has been marked as <strong>no-show</strong>.</p>`,
+    );
+
+    return res.json({ booking: updatedBooking });
+  } catch (err: any) {
+    console.error("markBookingNoShow error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to mark no-show" });
+  }
+};
+
+export const joinCheck = async (req: AuthRequest, res: Response) => {
+  try {
+    const actorId = req.user!.id;
+    const { id } = req.params;
+    const channel = String(req.query.channel || "");
+
+    if (!["message", "audio", "video"].includes(channel)) {
+      return res
+        .status(400)
+        .json({ error: "channel must be one of message|audio|video" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, patient_id, doctor_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+
+    if (booking.patient_id !== actorId && booking.doctor_id !== actorId) {
+      return res.status(403).json({ error: "Not allowed for this booking" });
+    }
+
+    const peerId =
+      booking.patient_id === actorId ? booking.doctor_id : booking.patient_id;
+    const access = await checkDirectInteractionAccess({
+      actorId,
+      peerId,
+      channel: channel as "message" | "audio" | "video",
+      bookingId: id,
+    });
+
+    if (!access.ok) {
+      return res.status(access.status).json({
+        allowed: false,
+        error: access.error,
+        code: access.code || "JOIN_NOT_ALLOWED",
+      });
+    }
+
+    return res.json({ allowed: true, booking: access.booking });
+  } catch (err: any) {
+    console.error("joinCheck error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to evaluate join check" });
+  }
+};
+
+const getProfile = async (userId: string) => {
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as { id: string; role: ProfileRole };
+};
+
+const ensureBookingParticipantOrAdmin = async (
+  bookingId: string,
+  userId: string,
+) => {
+  const [{ data: booking, error: bookingError }, profile] = await Promise.all([
+    supabaseAdmin
+      .from("bookings")
+      .select("id, patient_id, doctor_id")
+      .eq("id", bookingId)
+      .maybeSingle(),
+    getProfile(userId),
+  ]);
+
+  if (bookingError) throw bookingError;
+  if (!booking) return { ok: false, status: 404, error: "Booking not found" };
+  if (!profile) return { ok: false, status: 403, error: "Profile not found" };
+
+  const isParticipant =
+    booking.patient_id === userId || booking.doctor_id === userId;
+  const isAdmin = profile.role === "admin";
+  if (!isParticipant && !isAdmin) {
+    return {
+      ok: false,
+      status: 403,
+      error: "You are not allowed to access this booking",
+    };
+  }
+
+  return { ok: true, booking, profile };
+};
+
+const uploadBufferToCloudinary = async (
+  file: Express.Multer.File,
+  folder: string,
+) => {
+  const fakeReq = {
+    file,
+    body: { folder },
+  } as unknown as Request;
+
+  const result = await new Promise<any>((resolve, reject) => {
+    try {
+      (uploadFile as any)(fakeReq, {
+        status: (_: number) => ({ json: (d: any) => resolve(d) }),
+      } as any);
+    } catch (e) {
+      reject(e);
+    }
+  });
+
+  return result?.result || null;
+};
+
+const checkAvailabilityWindow = (
+  availability: any,
+  scheduledStart: Date,
+  scheduledEnd: Date,
+) => {
+  const tz = availability.timezone || "UTC";
+  const startDt = DateTime.fromJSDate(scheduledStart).setZone(tz);
+  const endDt = DateTime.fromJSDate(scheduledEnd).setZone(tz);
+
+  const day = startDt.weekday === 7 ? 0 : startDt.weekday;
+  const datePart = startDt.toISODate();
+  const startTime = startDt.toFormat("HH:mm:ss");
+  const endTime = endDt.toFormat("HH:mm:ss");
+
+  if (availability.specific_date && availability.specific_date !== datePart) {
+    return false;
+  }
+  if (
+    availability.day_of_week !== null &&
+    availability.day_of_week !== undefined &&
+    Number(availability.day_of_week) !== day
+  ) {
+    return false;
+  }
+
+  return (
+    startTime >= availability.start_time && endTime <= availability.end_time
+  );
+};
+
+export const createBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const patientId = req.user!.id;
+    const profile = await getProfile(patientId);
+    if (!profile) return res.status(403).json({ error: "Profile not found" });
+    if (profile.role !== "patient" && profile.role !== "admin") {
+      return res
+        .status(403)
+        .json({ error: "Only patients can create bookings" });
+    }
+
+    const {
+      doctor_id,
+      service_id,
+      availability_id,
+      payment_method,
+      scheduled_start,
+      scheduled_end,
+      patient_age,
+      symptoms,
+      booking_notes,
+    } = req.body;
+
+    const scheduledStart = new Date(scheduled_start);
+    const scheduledEnd = new Date(scheduled_end);
+
+    if (scheduledEnd <= scheduledStart) {
+      return res
+        .status(400)
+        .json({ error: "scheduled_end must be after scheduled_start" });
+    }
+
+    const { data: service, error: serviceError } = await supabaseAdmin
+      .from("doctor_services")
+      .select(
+        "id, doctor_id, title, description, service_mode, price_amount, currency, is_active",
+      )
+      .eq("id", service_id)
+      .maybeSingle();
+
+    if (serviceError) throw serviceError;
+    if (!service || !service.is_active) {
+      return res.status(404).json({ error: "Service not found or inactive" });
+    }
+
+    if (doctor_id && service.doctor_id !== doctor_id) {
+      return res
+        .status(400)
+        .json({ error: "Service does not belong to the selected doctor" });
+    }
+
+    if (payment_method === "cod" && service.service_mode !== "in_person") {
+      return res
+        .status(400)
+        .json({ error: "COD is only allowed for in-person services" });
+    }
+
+    const { data: activeAvailabilityRows, error: activeAvailabilityError } =
+      await supabaseAdmin
+        .from("doctor_service_availability")
+        .select("id", { count: "exact" })
+        .eq("service_id", service.id)
+        .eq("is_active", true)
+        .limit(1);
+
+    if (activeAvailabilityError) throw activeAvailabilityError;
+
+    const serviceHasActiveAvailability =
+      (activeAvailabilityRows || []).length > 0;
+    if (!availability_id && serviceHasActiveAvailability) {
+      return res.status(400).json({
+        error: "This service requires selecting an availability slot",
+        code: "BOOKING_AVAILABILITY_REQUIRED",
+      });
+    }
+
+    let resolvedAvailabilityId: string | null = null;
+    let resolvedSlotCapacity = 1;
+    if (availability_id) {
+      const { data: availability, error: availabilityError } =
+        await supabaseAdmin
+          .from("doctor_service_availability")
+          .select(
+            "id, service_id, doctor_id, day_of_week, specific_date, start_time, end_time, slot_capacity, is_active, timezone",
+          )
+          .eq("id", availability_id)
+          .maybeSingle();
+
+      if (availabilityError) throw availabilityError;
+      if (!availability || !availability.is_active) {
+        return res
+          .status(404)
+          .json({ error: "Availability slot not found or inactive" });
+      }
+      if (
+        availability.service_id !== service.id ||
+        availability.doctor_id !== service.doctor_id
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Availability does not match the selected service" });
+      }
+      if (
+        !checkAvailabilityWindow(availability, scheduledStart, scheduledEnd)
+      ) {
+        return res.status(400).json({
+          error: "Scheduled time is outside selected availability window",
+        });
+      }
+
+      resolvedAvailabilityId = availability.id;
+      resolvedSlotCapacity = Number(availability.slot_capacity || 1);
+    }
+
+    const { data: conflicts, error: conflictError } = await supabaseAdmin
+      .from("bookings")
+      .select("id")
+      .eq("doctor_id", service.doctor_id)
+      .in("status", ACTIVE_BOOKING_STATUSES)
+      .lt("scheduled_start", scheduled_end)
+      .gt("scheduled_end", scheduled_start)
+      .limit(50);
+
+    if (conflictError) throw conflictError;
+
+    const conflictCount = (conflicts || []).length;
+    if (resolvedAvailabilityId && conflictCount >= resolvedSlotCapacity) {
+      return res.status(409).json({
+        error: "Selected slot is fully booked. Please pick another slot.",
+        code: "BOOKING_SLOT_FULL",
+      });
+    }
+
+    if (!resolvedAvailabilityId && conflictCount > 0) {
+      return res.status(409).json({
+        error: "Selected time conflicts with another booking",
+        code: "BOOKING_TIME_CONFLICT",
+      });
+    }
+
+    const initialStatus =
+      payment_method === "cod" ? "pending_confirmation" : "pending_payment";
+    const initialPaymentStatus = "unpaid";
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .insert([
+        {
+          patient_id: patientId,
+          doctor_id: service.doctor_id,
+          service_id: service.id,
+          availability_id: resolvedAvailabilityId,
+          service_mode: service.service_mode,
+          payment_method,
+          status: initialStatus,
+          payment_status: initialPaymentStatus,
+          service_title_snapshot: service.title,
+          service_description_snapshot: service.description,
+          service_price_snapshot: service.price_amount,
+          currency: service.currency || "ETB",
+          scheduled_start,
+          scheduled_end,
+          patient_age: patient_age ?? null,
+          symptoms: symptoms ?? null,
+          booking_notes: booking_notes ?? null,
+        },
+      ])
+      .select("*")
+      .single();
+
+    if (bookingError) throw bookingError;
+
+    const { error: historyError } = await supabaseAdmin
+      .from("booking_status_history")
+      .insert([
+        {
+          booking_id: booking.id,
+          actor_id: patientId,
+          from_status: null,
+          to_status: booking.status,
+          note: "Booking created",
+        },
+      ]);
+    if (historyError) {
+      console.warn(
+        "booking status history insert warning:",
+        historyError.message,
+      );
+    }
+
+    return res.status(201).json({ booking });
+  } catch (err: any) {
+    console.error("createBooking error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to create booking" });
+  }
+};
+
+export const listMyBookings = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { type, status, service_mode } = req.query;
+    const { page, from, to } = parsePagination(req.query);
+    const now = new Date().toISOString();
+    const terminalStatuses = "(completed,cancelled,no_show,expired)";
+
+    let q = supabaseAdmin
+      .from("bookings")
+      .select("*", { count: "exact" })
+      .eq("patient_id", userId)
+      .range(from, to)
+      .order("scheduled_start", { ascending: type === "upcoming" });
+
+    if (type === "upcoming") {
+      q = q.gte("scheduled_start", now).not("status", "in", terminalStatuses);
+    }
+    if (type === "past") {
+      q = q.or(`scheduled_start.lt.${now},status.in.${terminalStatuses}`);
+    }
+    if (status) q = q.eq("status", String(status));
+    if (service_mode) q = q.eq("service_mode", String(service_mode));
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    return res.json({ bookings: data || [], page, total: count || 0 });
+  } catch (err: any) {
+    console.error("listMyBookings error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to list bookings" });
+  }
+};
+
+export const listDoctorBookings = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const profile = await getProfile(userId);
+    if (!profile) return res.status(403).json({ error: "Profile not found" });
+    if (profile.role !== "doctor" && profile.role !== "admin") {
+      return res.status(403).json({ error: "Doctor access required" });
+    }
+
+    const { type, status, service_mode } = req.query;
+    const { page, from, to } = parsePagination(req.query);
+    const now = new Date().toISOString();
+    const terminalStatuses = "(completed,cancelled,no_show,expired)";
+
+    let q = supabaseAdmin
+      .from("bookings")
+      .select("*", { count: "exact" })
+      .eq("doctor_id", userId)
+      .range(from, to)
+      .order("scheduled_start", { ascending: type === "upcoming" });
+
+    if (type === "upcoming") {
+      q = q.gte("scheduled_start", now).not("status", "in", terminalStatuses);
+    }
+    if (type === "past") {
+      q = q.or(`scheduled_start.lt.${now},status.in.${terminalStatuses}`);
+    }
+    if (status) q = q.eq("status", String(status));
+    if (service_mode) q = q.eq("service_mode", String(service_mode));
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    return res.json({ bookings: data || [], page, total: count || 0 });
+  } catch (err: any) {
+    console.error("listDoctorBookings error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to list doctor bookings" });
+  }
+};
+
+export const getBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const access = await ensureBookingParticipantOrAdmin(id, userId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("bookings")
+      .select(
+        `
+        *,
+        booking_documents(*),
+        booking_payments(*),
+        booking_status_history(*)
+      `,
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: "Booking not found" });
+
+    return res.json({ booking: data });
+  } catch (err: any) {
+    console.error("getBooking error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to fetch booking" });
+  }
+};
+
+export const addBookingDocuments = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const access = await ensureBookingParticipantOrAdmin(id, userId);
+    if (!access.ok) {
+      return res.status(access.status || 403).json({ error: access.error });
+    }
+
+    const documentType = req.body.document_type || "other";
+    const metadata = req.body.metadata || {};
+    const rows: Array<Record<string, any>> = [];
+
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (files && files.length) {
+      for (const file of files) {
+        const uploaded = await uploadBufferToCloudinary(
+          file,
+          `bellytalk/bookings/${id}`,
+        );
+        if (uploaded?.secure_url) {
+          rows.push({
+            booking_id: id,
+            uploaded_by: userId,
+            document_type: documentType,
+            file_url: uploaded.secure_url,
+            file_name: file.originalname,
+            metadata,
+          });
+        }
+      }
+    }
+
+    if (req.body.urls) {
+      const urlEntries =
+        typeof req.body.urls === "string"
+          ? JSON.parse(req.body.urls)
+          : req.body.urls;
+      if (Array.isArray(urlEntries)) {
+        for (const item of urlEntries) {
+          if (!item?.file_url) continue;
+          rows.push({
+            booking_id: id,
+            uploaded_by: userId,
+            document_type: item.document_type || documentType,
+            file_url: item.file_url,
+            file_name: item.file_name || null,
+            metadata,
+          });
+        }
+      }
+    }
+
+    if (!rows.length) {
+      return res.status(400).json({
+        error: "No documents provided. Upload files or pass urls array",
+      });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("booking_documents")
+      .insert(rows)
+      .select("*");
+
+    if (error) throw error;
+
+    return res.status(201).json({ documents: data || [] });
+  } catch (err: any) {
+    console.error("addBookingDocuments error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to add documents" });
+  }
+};
+
+export const submitBookingPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const {
+      payment_method,
+      amount,
+      currency = "ETB",
+      transaction_reference,
+      proof_document_id,
+      metadata,
+    } = req.body;
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select(
+        "id, patient_id, doctor_id, service_mode, payment_method, status, payment_status",
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    if (booking.patient_id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Only the booking owner can submit payment" });
+    }
+
+    if (payment_method !== booking.payment_method) {
+      return res
+        .status(400)
+        .json({ error: "Payment method must match booking payment_method" });
+    }
+
+    if (payment_method === "cod" && booking.service_mode !== "in_person") {
+      return res
+        .status(400)
+        .json({ error: "COD is only allowed for in-person services" });
+    }
+
+    if (payment_method === "proof_upload" && !proof_document_id) {
+      return res
+        .status(400)
+        .json({ error: "proof_document_id is required for proof_upload" });
+    }
+
+    const paymentStatus =
+      payment_method === "proof_upload" ? "pending_review" : "approved";
+    const bookingPaymentStatus =
+      payment_method === "proof_upload" ? "unpaid" : "";
+    const bookingStatus =
+      payment_method === "proof_upload"
+        ? "pending_payment"
+        : "pending_confirmation";
+
+    const { data: payment, error: paymentError } = await supabaseAdmin
+      .from("booking_payments")
+      .insert([
+        {
+          booking_id: id,
+          submitted_by: userId,
+          payment_method,
+          amount,
+          currency,
+          status: paymentStatus,
+          proof_document_id: proof_document_id || null,
+          transaction_reference: transaction_reference || null,
+          metadata: metadata || {},
+        },
+      ])
+      .select("*")
+      .single();
+
+    if (paymentError) throw paymentError;
+
+    const { data: updatedBooking, error: bookingUpdateError } =
+      await supabaseAdmin
+        .from("bookings")
+        .update({
+          payment_status: bookingPaymentStatus,
+          status: bookingStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+    if (bookingUpdateError) throw bookingUpdateError;
+
+    await supabaseAdmin.from("booking_status_history").insert([
+      {
+        booking_id: id,
+        actor_id: userId,
+        from_status: booking.status,
+        to_status: updatedBooking.status,
+        note: "Payment submitted",
+      },
+    ]);
+
+    // Notify doctor and patient about payment submission if proof_upload
+    if (payment_method === "proof_upload") {
+      await notifyBookingParticipants(
+        id,
+        "Booking Payment Submitted - EzyMed",
+        (patientName, doctorName) =>
+          `<p>Hello ${doctorName} and ${patientName},</p><p>A payment proof has been submitted for your booking. Please review the payment document at your earliest convenience.</p>`,
+      );
+    }
+    return res.status(201).json({ payment, booking: updatedBooking });
+  } catch (err: any) {
+    console.error("submitBookingPayment error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to submit payment" });
+  }
+};
+
+export const reviewBookingPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const reviewerId = req.user!.id;
+    const { id, paymentId } = req.params;
+    const { status, rejection_reason } = req.body;
+
+    const profile = await getProfile(reviewerId);
+    if (!profile) return res.status(403).json({ error: "Profile not found" });
+    if (profile.role !== "doctor" && profile.role !== "admin") {
+      return res
+        .status(403)
+        .json({ error: "Only doctor/admin can review payments" });
+    }
+
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("bookings")
+      .select("id, doctor_id, status")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (bookingError) throw bookingError;
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
+    if (profile.role !== "admin" && booking.doctor_id !== reviewerId) {
+      return res
+        .status(403)
+        .json({ error: "Only assigned doctor can review this payment" });
+    }
+
+    const { data: payment, error: paymentError } = await supabaseAdmin
+      .from("booking_payments")
+      .update({
+        status,
+        rejection_reason:
+          status === "rejected" ? rejection_reason || null : null,
+        reviewer_id: reviewerId,
+        reviewed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", paymentId)
+      .eq("booking_id", id)
+      .select("*")
+      .maybeSingle();
+
+    if (paymentError) throw paymentError;
+    if (!payment) return res.status(404).json({ error: "Payment not found" });
+
+    const transitionAction =
+      status === "approved"
+        ? "payment_review_approved"
+        : "payment_review_rejected";
+    const invalidPaymentReview = invalidTransitionResponse(
+      res,
+      transitionAction,
+      booking.status,
+    );
+    if (invalidPaymentReview) return invalidPaymentReview;
+
+    const nextBookingStatus =
+      status === "approved" ? "pending_confirmation" : "pending_payment";
+    const nextPaymentStatus = status === "approved" ? "paid" : "rejected";
+
+    const { data: updatedBooking, error: updateBookingError } =
+      await supabaseAdmin
+        .from("bookings")
+        .update({
+          status: nextBookingStatus,
+          payment_status: nextPaymentStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+    if (updateBookingError) throw updateBookingError;
+
+    await supabaseAdmin.from("booking_status_history").insert([
+      {
+        booking_id: id,
+        actor_id: reviewerId,
+        from_status: booking.status,
+        to_status: updatedBooking.status,
+        note: status === "approved" ? "Payment approved" : "Payment rejected",
+      },
+    ]);
+    console.info(
+      `[booking-payment-review] booking=${id} actor=${reviewerId} result=${status} from=${booking.status} to=${updatedBooking.status}`,
+    );
+
+    await notifyBookingParticipants(
+      id,
+      status === "approved"
+        ? "Booking Payment Approved - EzyMed"
+        : "Booking Payment Rejected - EzyMed",
+      (patientName, doctorName) =>
+        `<p>Hello ${patientName} and ${doctorName},</p><p>Payment review result: <strong>${status}</strong>.</p>`,
+    );
+
+    return res.json({ payment, booking: updatedBooking });
+  } catch (err: any) {
+    console.error("reviewBookingPayment error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to review payment" });
+  }
+};
+
+export const listPendingConfirmationQueue = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const { page, from, to } = parsePagination(req.query);
+    const { doctor_id, service_mode } = req.query;
+
+    let q = supabaseAdmin
+      .from("bookings")
+      .select("*", { count: "exact" })
+      .eq("status", "pending_confirmation")
+      .order("scheduled_start", { ascending: true })
+      .range(from, to);
+
+    if (doctor_id) q = q.eq("doctor_id", String(doctor_id));
+    if (service_mode) q = q.eq("service_mode", String(service_mode));
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    const bookings = await attachParticipantProfiles(data || []);
+
+    return res.json({
+      queue: bookings,
+      page,
+      total: count || 0,
+    });
+  } catch (err: any) {
+    console.error("listPendingConfirmationQueue error:", err);
+    return res.status(500).json({
+      error: err.message || "Failed to fetch pending confirmation queue",
+    });
+  }
+};
+
+export const listPendingPaymentReviewQueue = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const { page, from, to } = parsePagination(req.query);
+    const { doctor_id } = req.query;
+
+    let q = supabaseAdmin
+      .from("bookings")
+      .select("*", { count: "exact" })
+      .eq("status", "pending_payment")
+      .eq("payment_status", "pending_review")
+      .eq("payment_method", "proof_upload")
+      .order("updated_at", { ascending: true })
+      .range(from, to);
+
+    if (doctor_id) q = q.eq("doctor_id", String(doctor_id));
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    const withProfiles = await attachParticipantProfiles(data || []);
+    const queue = await attachPendingPayments(withProfiles);
+
+    return res.json({ queue, page, total: count || 0 });
+  } catch (err: any) {
+    console.error("listPendingPaymentReviewQueue error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to fetch payment review queue" });
+  }
+};
+
+export const listTodayBookingsQueue = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const { page, from, to } = parsePagination(req.query);
+    const { doctor_id, service_mode, date } = req.query;
+    const { startIso, endIso } = getDayBoundsUtc(
+      date ? String(date) : undefined,
+    );
+
+    let q = supabaseAdmin
+      .from("bookings")
+      .select("*", { count: "exact" })
+      .gte("scheduled_start", startIso)
+      .lt("scheduled_start", endIso)
+      .in("status", [
+        "pending_payment",
+        "pending_confirmation",
+        "confirmed",
+        "no_show",
+      ])
+      .order("scheduled_start", { ascending: true })
+      .range(from, to);
+
+    if (doctor_id) q = q.eq("doctor_id", String(doctor_id));
+    if (service_mode) q = q.eq("service_mode", String(service_mode));
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    const queue = await attachParticipantProfiles(data || []);
+
+    return res.json({
+      queue,
+      page,
+      total: count || 0,
+      date: startIso.slice(0, 10),
+    });
+  } catch (err: any) {
+    console.error("listTodayBookingsQueue error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to fetch today's bookings queue" });
+  }
+};
+
+export const getAdminQueueMetrics = async (req: AuthRequest, res: Response) => {
+  try {
+    const { doctor_id, service_mode, date } = req.query;
+    const nowIso = new Date().toISOString();
+    const { startIso, endIso } = getDayBoundsUtc(
+      date ? String(date) : undefined,
+    );
+
+    const applyBaseFilters = (query: any) => {
+      let q = query;
+      if (doctor_id) q = q.eq("doctor_id", String(doctor_id));
+      if (service_mode) q = q.eq("service_mode", String(service_mode));
+      return q;
+    };
+
+    const [
+      pendingConfirmations,
+      pendingPaymentReviews,
+      todayBookings,
+      overdueConfirmations,
+    ] = await Promise.all([
+      applyBaseFilters(
+        supabaseAdmin
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending_confirmation"),
+      ),
+      applyBaseFilters(
+        supabaseAdmin
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending_payment")
+          .eq("payment_status", "pending_review")
+          .eq("payment_method", "proof_upload"),
+      ),
+      applyBaseFilters(
+        supabaseAdmin
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .gte("scheduled_start", startIso)
+          .lt("scheduled_start", endIso)
+          .in("status", [
+            "pending_payment",
+            "pending_confirmation",
+            "confirmed",
+            "no_show",
+          ]),
+      ),
+      applyBaseFilters(
+        supabaseAdmin
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending_confirmation")
+          .lt("scheduled_start", nowIso),
+      ),
+    ]);
+
+    if (
+      pendingConfirmations.error ||
+      pendingPaymentReviews.error ||
+      todayBookings.error ||
+      overdueConfirmations.error
+    ) {
+      throw (
+        pendingConfirmations.error ||
+        pendingPaymentReviews.error ||
+        todayBookings.error ||
+        overdueConfirmations.error
+      );
+    }
+
+    return res.json({
+      date: startIso.slice(0, 10),
+      metrics: {
+        pending_confirmations: pendingConfirmations.count || 0,
+        pending_payment_reviews: pendingPaymentReviews.count || 0,
+        todays_bookings: todayBookings.count || 0,
+        overdue_confirmations: overdueConfirmations.count || 0,
+      },
+    });
+  } catch (err: any) {
+    console.error("getAdminQueueMetrics error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to fetch queue metrics" });
+  }
+};
+
+export const listDoctorPatients = async (req: AuthRequest, res: Response) => {
+  try {
+    const doctorId = req.user!.id;
+
+    // Get unique patient IDs from bookings where this doctor is involved
+    const { data: bookings, error: bookingsError } = await supabaseAdmin
+      .from("bookings")
+      .select("patient_id")
+      .eq("doctor_id", doctorId);
+
+    if (bookingsError) throw bookingsError;
+
+    const patientIds = Array.from(new Set(bookings.map((b) => b.patient_id)));
+
+    if (patientIds.length === 0) {
+      return res.json([]);
+    }
+
+    // Fetch profiles for these patients
+    const { data: patients, error: patientsError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email, phone, location, avatar_url, created_at")
+      .in("id", patientIds)
+      .order("full_name", { ascending: true });
+
+    if (patientsError) throw patientsError;
+
+    return res.json(patients);
+  } catch (err: any) {
+    console.error("listDoctorPatients error:", err);
+    return res
+      .status(500)
+      .json({ error: err.message || "Failed to fetch doctor's patients" });
+  }
+};

@@ -1,0 +1,169 @@
+import api from "./api";
+import { supabase } from "./supabase";
+import {
+  DoctorDirectoryItem,
+  DoctorProfile,
+  DoctorService,
+  DoctorServiceAvailability,
+  DoctorServiceSlot,
+} from "../types";
+
+interface ListDoctorsOptions {
+  page?: number;
+  limit?: number;
+  specialty?: string;
+}
+
+interface PresenceDoctor {
+  id: string;
+  full_name: string;
+  status: "online" | "offline" | "away";
+  last_seen: string | null;
+}
+
+export const doctorDiscoveryService = {
+  async getDoctorsPresence(doctorIds: string[]): Promise<PresenceDoctor[]> {
+    if (!doctorIds.length) {
+      return [];
+    }
+
+    try {
+      const response = await api.get("/presence/doctors", {
+        params: { ids: doctorIds.join(",") },
+      });
+
+      return (response.data.doctors || []) as PresenceDoctor[];
+    } catch (error) {
+      console.error("Failed to fetch doctor presence from API:", error);
+
+      try {
+        const [presenceResult, profilesResult] = await Promise.all([
+          supabase
+            .from("user_presence")
+            .select("user_id, status, last_seen")
+            .in("user_id", doctorIds),
+          supabase.from("profiles").select("id, full_name").in("id", doctorIds),
+        ]);
+
+        if (presenceResult.error) throw presenceResult.error;
+        if (profilesResult.error) throw profilesResult.error;
+
+        const presenceMap = new Map(
+          (presenceResult.data || []).map((row) => [row.user_id, row]),
+        );
+        const profileMap = new Map(
+          (profilesResult.data || []).map((row) => [row.id, row]),
+        );
+
+        return doctorIds.map((id) => {
+          const presence = presenceMap.get(id);
+          const profile = profileMap.get(id);
+
+          return {
+            id,
+            full_name: profile?.full_name || `Dr. ${id.slice(0, 8)}`,
+            status: (presence?.status || "offline") as
+              | "online"
+              | "offline"
+              | "away",
+            last_seen: presence?.last_seen || null,
+          };
+        });
+      } catch (fallbackError) {
+        console.error(
+          "Supabase fallback for doctor presence failed:",
+          fallbackError,
+        );
+        return doctorIds.map((id) => ({
+          id,
+          full_name: `Dr. ${id.slice(0, 8)}`,
+          status: "offline" as const,
+          last_seen: null,
+        }));
+      }
+    }
+  },
+
+  async listDoctors(options: ListDoctorsOptions = {}) {
+    const response = await api.get("/doctors", {
+      params: {
+        page: options.page ?? 1,
+        limit: options.limit ?? 24,
+        verification_status: "approved",
+        specialty: options.specialty || undefined,
+      },
+    });
+
+    const doctors = (response.data.doctors || []) as DoctorProfile[];
+    if (!doctors.length) {
+      return [] as DoctorDirectoryItem[];
+    }
+
+    const ids = doctors.map((doctor) => doctor.user_id).filter(Boolean);
+
+    try {
+      const presenceDoctors = await this.getDoctorsPresence(ids);
+      const presenceMap = new Map(
+        presenceDoctors.map((item) => [item.id, item]),
+      );
+
+      return doctors.map((doctor) => {
+        const presence = presenceMap.get(doctor.user_id);
+        return {
+          ...doctor,
+          full_name: presence?.full_name,
+          status: (presence?.status || "offline") as
+            | "online"
+            | "offline"
+            | "away",
+          last_seen: presence?.last_seen ?? null,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to fetch doctor presence:", error);
+      return doctors.map((doctor) => ({
+        ...doctor,
+        status: "offline" as const,
+        last_seen: null,
+      }));
+    }
+  },
+
+  async getDoctorProfile(doctorId: string): Promise<DoctorProfile> {
+    const response = await api.get(`/doctors/${doctorId}`);
+    return response.data.doctor as DoctorProfile;
+  },
+
+  async getDoctorServices(doctorId: string): Promise<DoctorService[]> {
+    const response = await api.get("/doctor-services", {
+      params: {
+        doctor_id: doctorId,
+        page: 1,
+        limit: 50,
+      },
+    });
+    return (response.data.services || []) as DoctorService[];
+  },
+
+  async getServiceAvailability(
+    serviceId: string,
+  ): Promise<DoctorServiceAvailability[]> {
+    const response = await api.get(
+      `/doctor-services/${serviceId}/availability`,
+    );
+    return (response.data.availability || []) as DoctorServiceAvailability[];
+  },
+
+  async getServiceSlots(
+    serviceId: string,
+    lookaheadDays = 21,
+  ): Promise<DoctorServiceSlot[]> {
+    const response = await api.get(`/doctor-services/${serviceId}/slots`, {
+      params: {
+        lookahead_days: lookaheadDays,
+      },
+    });
+
+    return (response.data.slots || []) as DoctorServiceSlot[];
+  },
+};
