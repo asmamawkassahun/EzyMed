@@ -15,7 +15,7 @@ const statusTone = (status?: string) => {
     case "rejected":
       return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
     default:
-      return "bg-secondary-lighter text-sky-800 dark:bg-sky-950/40 dark:text-sky-200";
+      return "bg-primary-100 text-primary-900 dark:bg-primary-950/40 dark:text-primary-200";
   }
 };
 

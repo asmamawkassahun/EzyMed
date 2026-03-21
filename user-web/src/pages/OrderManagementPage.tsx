@@ -193,9 +193,9 @@ const OrderManagementPage: React.FC = () => {
       case "confirmed":
         return "bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300 border-primary-200/90 dark:border-primary-800/50";
       case "shipped":
-        return "bg-sky-100 dark:bg-sky-900/25 text-sky-800 dark:text-sky-300 border-sky-200/90 dark:border-sky-800/50";
+        return "bg-primary-100 dark:bg-primary-950/30 text-primary-900 dark:text-primary-200 border-primary-200/90 dark:border-primary-800/50";
       case "delivered":
-        return "bg-emerald-100 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-300 border-emerald-200/90 dark:border-emerald-800/50";
+        return "bg-accent-light/90 dark:bg-accent/15 text-fuchsia-900 dark:text-fuchsia-200 border-accent/40 dark:border-accent/30";
       case "cancelled":
         return "bg-red-100 dark:bg-red-900/25 text-red-800 dark:text-red-300 border-red-200/90 dark:border-red-800/50";
       default:
@@ -206,7 +206,7 @@ const OrderManagementPage: React.FC = () => {
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "paid":
-        return "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400";
+        return "bg-primary-100 dark:bg-primary-950/30 text-primary-800 dark:text-primary-300";
       case "pending":
       case "pending_review":
       case "unpaid":
@@ -495,7 +495,7 @@ const OrderManagementPage: React.FC = () => {
                           Payment: {order.payment_status}
                         </span>
                         {myProducts.length > 0 && (
-                          <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                          <span className="rounded-full bg-primary-100 px-2 py-1 text-xs font-semibold text-primary-900 dark:bg-primary-950/40 dark:text-primary-200">
                             Your products: {myProducts.length}
                           </span>
                         )}
@@ -621,7 +621,7 @@ const OrderManagementPage: React.FC = () => {
                     {order.shipping_address && (
                       <div className="mt-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-800/40">
                         <div className="mb-2 flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                          <MapPin className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                           <h5 className="font-bold text-slate-900 dark:text-white">
                             Shipping address
                           </h5>
@@ -701,7 +701,7 @@ const OrderManagementPage: React.FC = () => {
                                   onClick={() =>
                                     openPaymentReviewDialog(order, "approved")
                                   }
-                                  className="rounded-xl border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/25"
+                                  className="rounded-xl border border-primary-300 px-3 py-1.5 text-xs font-semibold text-primary-900 transition hover:bg-primary-50 dark:border-primary-700 dark:text-primary-200 dark:hover:bg-primary-950/30"
                                 >
                                   Approve payment
                                 </button>

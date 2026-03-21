@@ -45,11 +45,11 @@ const OrdersPage: React.FC = () => {
       case "pending":
         return "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700";
       case "confirmed":
-        return "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700";
+        return "bg-secondary-lighter dark:bg-secondary/15 text-rose-800 dark:text-rose-200 border-secondary/40 dark:border-secondary/35";
       case "shipped":
-        return "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700";
+        return "bg-primary-100 dark:bg-primary-950/35 text-primary-900 dark:text-primary-200 border-primary-300 dark:border-primary-700";
       case "delivered":
-        return "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700";
+        return "bg-primary-50 dark:bg-primary-950/25 text-primary-800 dark:text-primary-300 border-primary-200 dark:border-primary-800";
       case "cancelled":
         return "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700";
       default:
@@ -60,7 +60,7 @@ const OrdersPage: React.FC = () => {
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "paid":
-        return "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400";
+        return "bg-primary-100 dark:bg-primary-950/30 text-primary-800 dark:text-primary-300";
       case "pending":
         return "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400";
       case "failed":
@@ -282,7 +282,7 @@ const OrdersPage: React.FC = () => {
                   )}
 
                   {order.notes && (
-                    <div className="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <div className="mt-4 rounded-lg border border-primary-200/80 bg-primary-50/80 p-4 dark:border-primary-800/50 dark:bg-primary-950/25">
                       <h5 className="font-semibold text-gray-900 dark:text-white mb-1">
                         Order Notes
                       </h5>

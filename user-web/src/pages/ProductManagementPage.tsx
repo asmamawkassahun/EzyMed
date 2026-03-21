@@ -254,19 +254,19 @@ const ProductManagementPage: React.FC = () => {
               {products.length}
             </p>
           </div>
-          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 p-4 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-950/25">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+          <div className="border-2 border-primary-200/80 bg-primary-50/90 p-4 shadow-[3px_3px_0_0_rgba(124,58,237,0.08)] dark:border-primary-800/45 dark:bg-primary-950/25">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-primary-800 dark:text-primary-300">
               In stock
             </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-900 dark:text-emerald-100">
+            <p className="mt-1 text-2xl font-bold tabular-nums text-primary-900 dark:text-primary-100">
               {inStockCount}
             </p>
           </div>
-          <div className="hidden rounded-2xl border border-sky-200/80 bg-sky-50/90 p-4 shadow-sm dark:border-sky-900/40 dark:bg-sky-950/20 sm:block">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">
+          <div className="hidden border-2 border-secondary/35 bg-secondary-lighter/90 p-4 shadow-[3px_3px_0_0_rgba(244,63,94,0.1)] dark:border-secondary/25 dark:bg-secondary/12 sm:block">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-rose-900 dark:text-rose-200">
               Matching search
             </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-sky-900 dark:text-sky-100">
+            <p className="mt-1 text-2xl font-bold tabular-nums text-rose-950 dark:text-rose-100">
               {filteredProducts.length}
             </p>
           </div>
@@ -349,7 +349,7 @@ const ProductManagementPage: React.FC = () => {
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         product.stock > 0
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          ? "bg-primary-100 text-primary-900 dark:bg-primary-950/45 dark:text-primary-200"
                           : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
                       }`}
                     >

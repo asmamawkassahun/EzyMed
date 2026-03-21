@@ -57,7 +57,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             {user && (
               <button
                 onClick={onMenuClick}
-                className="cursor-pointer lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+                className="cursor-pointer border border-slate-200/90 p-2 transition hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800 lg:hidden"
                 aria-label="Toggle sidebar"
               >
                 <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
@@ -80,7 +80,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             {user ? (
               <>
                 <div className="hidden md:flex items-center gap-3">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     {profile?.full_name || user.email}
                   </span>
                   <span className="rounded-full border border-primary-200/90 bg-primary-100 px-2 py-1 text-xs font-semibold text-primary-900 dark:border-primary-700 dark:bg-primary-950 dark:text-primary-100">
@@ -89,7 +89,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 </div>
                 <button
                   onClick={toggleTheme}
-                  className="p-2 cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all"
+                  className="cursor-pointer border border-slate-200/90 p-2 text-slate-700 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:bg-slate-800"
                   aria-label="Toggle theme"
                 >
                   {isDark ? (
@@ -101,7 +101,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 {canSeeNotifications && (
                   <Link
                     to="/notifications"
-                    className="relative p-2 cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all"
+                    className="relative cursor-pointer border border-slate-200/90 p-2 text-slate-700 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:bg-slate-800"
                     aria-label="Notifications"
                   >
                     <Bell className="w-5 h-5" />
@@ -116,7 +116,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="p-2 cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all"
+                  className="cursor-pointer border border-slate-200/90 p-2 text-slate-700 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:bg-slate-800"
                   aria-label="Logout"
                 >
                   <LogOut className="w-5 h-5" />
@@ -126,7 +126,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
               <>
                 <button
                   onClick={toggleTheme}
-                  className="p-2 cursor-pointer rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all"
+                  className="cursor-pointer border border-slate-200/90 p-2 text-slate-700 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:bg-slate-800"
                   aria-label="Toggle theme"
                 >
                   {isDark ? (

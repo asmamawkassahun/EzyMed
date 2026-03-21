@@ -343,7 +343,7 @@ const ShopPage: React.FC = () => {
                         <span
                           className={`px-3 py-1 text-xs sm:text-sm font-semibold rounded-full ${
                             selectedProduct.stock > 0
-                              ? "bg-green-100 dark:bg-green-900/25 text-green-700 dark:text-green-300"
+                              ? "bg-primary-100 dark:bg-primary-950/35 text-primary-800 dark:text-primary-200"
                               : "bg-red-100 dark:bg-red-900/25 text-red-700 dark:text-red-300"
                           }`}
                         >

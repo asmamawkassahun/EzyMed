@@ -68,8 +68,8 @@ const PharmacyPendingApprovalPage: React.FC = () => {
         return (
           <div className="text-center space-y-5">
             <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-2xl bg-secondary-lighter dark:bg-sky-950/40 border border-sky-200/70 dark:border-sky-800/50 flex items-center justify-center shadow-sm">
-                <Clock className="w-11 h-11 text-secondary dark:text-sky-400" />
+              <div className="flex h-20 w-20 items-center justify-center border-2 border-primary-200/80 bg-primary-50 dark:border-primary-800/50 dark:bg-primary-950/30">
+                <Clock className="h-11 w-11 text-primary-600 dark:text-primary-400" />
               </div>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -79,7 +79,7 @@ const PharmacyPendingApprovalPage: React.FC = () => {
               Your pharmacy profile is currently being reviewed by our administrative team.
               This process typically takes 24-48 hours.
             </p>
-            <div className="p-4 bg-secondary-lighter/80 dark:bg-sky-950/25 border border-sky-200/80 dark:border-sky-800/50 rounded-xl text-slate-700 dark:text-slate-200 text-sm flex items-start gap-3 text-left">
+            <div className="flex items-start gap-3 border-2 border-primary-200/70 bg-primary-50/80 p-4 text-left text-sm text-slate-700 dark:border-primary-800/45 dark:bg-primary-950/20 dark:text-slate-200">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-secondary" />
               <p>
                 You will receive an email notification once your profile status has been updated.

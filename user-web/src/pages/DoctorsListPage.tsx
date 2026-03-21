@@ -84,7 +84,7 @@ const DoctorsListPage: React.FC = () => {
       <span
         className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
           isOnline
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+            ? "bg-primary-100 text-primary-900 dark:bg-primary-950/40 dark:text-primary-200"
             : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
         }`}
       >
@@ -97,8 +97,8 @@ const DoctorsListPage: React.FC = () => {
   return (
     <Layout>
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="border-2 border-slate-200/90 bg-white/95 p-6 shadow-[4px_4px_0_0_rgba(124,58,237,0.06)] dark:border-slate-700 dark:bg-[#12101c]/90 dark:shadow-[4px_4px_0_0_rgba(124,58,237,0.12)]">
+          <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
             Find a Doctor
           </h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
@@ -210,7 +210,7 @@ const DoctorsListPage: React.FC = () => {
 
                 <button
                   onClick={() => navigate(`/doctors/${doctor.user_id}`)}
-                  className="mt-5 w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700"
+                  className="mt-5 w-full cursor-pointer bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700"
                 >
                   View Services & Book
                 </button>

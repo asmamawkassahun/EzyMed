@@ -24,9 +24,9 @@ import { doctorDiscoveryService } from "../services/doctor-discovery.service";
 import { shopService } from "../services/shop.service";
 
 const pageSection =
-  "rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/70 backdrop-blur-sm p-6 sm:p-7 shadow-sm";
+  "border-2 border-slate-200/85 dark:border-slate-700/55 bg-white/95 dark:bg-[#12101c]/92 backdrop-blur-sm p-6 sm:p-8 shadow-[4px_4px_0_0_rgba(124,58,237,0.06)] dark:shadow-[4px_4px_0_0_rgba(124,58,237,0.12)] transition-all duration-300 hover:shadow-[6px_6px_0_0_rgba(124,58,237,0.09)]";
 const heroShell =
-  "relative overflow-hidden rounded-2xl border border-slate-200/50 dark:border-slate-700/50 bg-linear-to-br from-primary-600 via-primary-700 to-slate-900 p-8 sm:p-10 text-white shadow-lg shadow-primary-900/15";
+  "relative overflow-hidden border-2 border-primary-400/30 dark:border-primary-500/25 bg-linear-to-br from-primary-600 via-primary-800 to-slate-950 p-8 sm:p-10 text-white shadow-[8px_8px_0_0_rgba(124,58,237,0.18)] dark:shadow-[8px_8px_0_0_rgba(167,139,250,0.14)] animate-rise-in";
 
 const DashboardPage: React.FC = () => {
   const { profile } = useAuth();
@@ -236,14 +236,15 @@ const DashboardPage: React.FC = () => {
     "rounded-2xl border p-5 sm:p-6 transition-shadow hover:shadow-md";
   const statCardNeutral = `${statCardBase} border-slate-200/90 bg-white dark:border-slate-700/80 dark:bg-slate-900/80`;
   const statCardAmber = `${statCardBase} border-amber-200/80 bg-amber-50/90 dark:border-amber-900/40 dark:bg-amber-950/25`;
-  const statCardSky = `${statCardBase} border-sky-200/80 bg-sky-50/90 dark:border-sky-900/35 dark:bg-sky-950/20`;
-  const statCardEmerald = `${statCardBase} border-emerald-200/80 bg-emerald-50/90 dark:border-emerald-900/35 dark:bg-emerald-950/20`;
+  const statCardViolet = `${statCardBase} border-primary-200/80 bg-primary-50/90 dark:border-primary-800/45 dark:bg-primary-950/25`;
+  const statCardRose = `${statCardBase} border-secondary/35 bg-secondary-lighter/90 dark:border-secondary/25 dark:bg-secondary/12`;
+  const statCardMagenta = `${statCardBase} border-accent/35 bg-accent-light/55 dark:border-accent/25 dark:bg-accent/12`;
 
   const renderPatientDashboard = () => (
     <div className="mx-auto max-w-7xl space-y-8">
       <div className={heroShell}>
         <div
-          className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_80%_0%,rgba(56,189,248,0.35),transparent_55%)]"
+          className="pointer-events-none absolute inset-0 opacity-45 bg-[radial-gradient(ellipse_at_85%_0%,rgba(244,63,94,0.32),transparent_55%)]"
           aria-hidden
         />
         <div className="relative flex items-start gap-3">
@@ -254,7 +255,7 @@ const DashboardPage: React.FC = () => {
             <p className="text-xs font-semibold uppercase tracking-widest text-primary-100/90">
               Your dashboard
             </p>
-            <h2 className="mt-1 text-3xl font-bold tracking-tight">
+            <h2 className="mt-1 font-display text-3xl font-bold tracking-tight">
               Care journey, {profile.full_name}
             </h2>
             <p className="mt-2 max-w-xl text-sm text-white/85 sm:text-base">
@@ -339,8 +340,8 @@ const DashboardPage: React.FC = () => {
       <section className={pageSection}>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300">
-              <Stethoscope className="h-5 w-5" aria-hidden />
+            <span className="flex h-9 w-9 items-center justify-center border border-primary-200/80 bg-primary-100 dark:border-primary-800/50 dark:bg-primary-950/40">
+              <Stethoscope className="h-5 w-5 text-primary-700 dark:text-primary-300" aria-hidden />
             </span>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               Trusted doctors
@@ -381,7 +382,7 @@ const DashboardPage: React.FC = () => {
                   <span
                     className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                       doctorItem.status === "online"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                        ? "bg-primary-100 text-primary-900 dark:bg-primary-950/50 dark:text-primary-200"
                         : doctorItem.status === "away"
                           ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
                           : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
@@ -430,7 +431,7 @@ const DashboardPage: React.FC = () => {
             onClick={() => navigate("/doctors")}
             className="group cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md dark:border-slate-700 dark:bg-slate-800/30"
           >
-            <MessageCircle className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+            <MessageCircle className="h-5 w-5 text-secondary dark:text-secondary-light" />
             <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
               Contact doctors
             </p>
@@ -455,14 +456,14 @@ const DashboardPage: React.FC = () => {
     <div className="mx-auto max-w-7xl space-y-8">
       <div className={heroShell}>
         <div
-          className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_20%_80%,rgba(94,234,212,0.35),transparent_45%)]"
+          className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_15%_85%,rgba(232,121,249,0.3),transparent_48%)]"
           aria-hidden
         />
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary-100/90">
             Pharmacy console
           </p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight">
+          <h2 className="mt-1 font-display text-3xl font-bold tracking-tight">
             Welcome back, {profile.full_name}
           </h2>
           <p className="mt-2 max-w-xl text-sm text-white/85 sm:text-base">
@@ -510,29 +511,29 @@ const DashboardPage: React.FC = () => {
               </p>
             </article>
 
-            <article className={statCardSky}>
-              <p className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">
+            <article className={statCardViolet}>
+              <p className="text-xs font-bold uppercase tracking-wider text-primary-800 dark:text-primary-300">
                 Shipped
               </p>
-              <p className="mt-2 text-3xl font-bold tabular-nums text-sky-900 dark:text-sky-200">
+              <p className="mt-2 text-3xl font-bold tabular-nums text-primary-900 dark:text-primary-100">
                 {pharmacyOrders.filter((o) => o.order_status === "shipped").length}
               </p>
-              <p className="mt-1 text-sm text-sky-800/90 dark:text-sky-200/90">
+              <p className="mt-1 text-sm text-primary-800/90 dark:text-primary-200/90">
                 In transit
               </p>
             </article>
 
-            <article className={statCardEmerald}>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+            <article className={statCardMagenta}>
+              <p className="text-xs font-bold uppercase tracking-wider text-fuchsia-900 dark:text-fuchsia-200">
                 Completed
               </p>
-              <p className="mt-2 text-3xl font-bold tabular-nums text-emerald-900 dark:text-emerald-200">
+              <p className="mt-2 text-3xl font-bold tabular-nums text-fuchsia-950 dark:text-fuchsia-100">
                 {
                   pharmacyOrders.filter((o) => o.order_status === "delivered")
                     .length
                 }
               </p>
-              <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-200/90">
+              <p className="mt-1 text-sm text-fuchsia-900/85 dark:text-fuchsia-200/90">
                 Delivered successfully
               </p>
             </article>
@@ -569,8 +570,8 @@ const DashboardPage: React.FC = () => {
           className="group cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900/70"
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-950/40">
-              <ClipboardCheck className="h-5 w-5 text-sky-700 dark:text-sky-300" />
+            <span className="flex h-10 w-10 items-center justify-center border border-secondary/30 bg-secondary-lighter dark:border-secondary/25 dark:bg-secondary/15">
+              <ClipboardCheck className="h-5 w-5 text-secondary dark:text-secondary-light" />
             </span>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               Fulfillment desk
@@ -644,7 +645,7 @@ const DashboardPage: React.FC = () => {
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                       order.order_status === "delivered"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                        ? "bg-primary-100 text-primary-900 dark:bg-primary-950/50 dark:text-primary-200"
                         : order.order_status === "cancelled"
                           ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
                           : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
@@ -666,14 +667,14 @@ const DashboardPage: React.FC = () => {
     <div className="mx-auto max-w-7xl space-y-8">
       <div className={heroShell}>
         <div
-          className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_0%_50%,rgba(56,189,248,0.3),transparent_50%)]"
+          className="pointer-events-none absolute inset-0 opacity-45 bg-[radial-gradient(ellipse_at_0%_50%,rgba(244,63,94,0.28),transparent_52%)]"
           aria-hidden
         />
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary-100/90">
             Clinician workspace
           </p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight">
+          <h2 className="mt-1 font-display text-3xl font-bold tracking-tight">
             Welcome back, Dr. {profile.full_name}
           </h2>
           <p className="mt-2 max-w-xl text-sm text-white/85 sm:text-base">
@@ -714,26 +715,26 @@ const DashboardPage: React.FC = () => {
               </p>
             </article>
 
-            <article className={statCardSky}>
-              <p className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">
+            <article className={statCardViolet}>
+              <p className="text-xs font-bold uppercase tracking-wider text-primary-800 dark:text-primary-300">
                 Upcoming confirmed
               </p>
-              <p className="mt-2 text-3xl font-bold tabular-nums text-sky-900 dark:text-sky-200">
+              <p className="mt-2 text-3xl font-bold tabular-nums text-primary-900 dark:text-primary-100">
                 {confirmedBookings.length}
               </p>
-              <p className="mt-1 text-sm text-sky-800/90 dark:text-sky-200/90">
+              <p className="mt-1 text-sm text-primary-800/90 dark:text-primary-200/90">
                 On the calendar ahead
               </p>
             </article>
 
-            <article className={statCardEmerald}>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+            <article className={statCardRose}>
+              <p className="text-xs font-bold uppercase tracking-wider text-rose-900 dark:text-rose-200">
                 Today&apos;s sessions
               </p>
-              <p className="mt-2 text-3xl font-bold tabular-nums text-emerald-900 dark:text-emerald-200">
+              <p className="mt-2 text-3xl font-bold tabular-nums text-rose-950 dark:text-rose-100">
                 {todaysBookings.length}
               </p>
-              <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-200/90">
+              <p className="mt-1 text-sm text-rose-900/85 dark:text-rose-200/90">
                 Scheduled for today
               </p>
             </article>
@@ -770,8 +771,8 @@ const DashboardPage: React.FC = () => {
           className="group cursor-pointer rounded-2xl border border-slate-200/90 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900/70"
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-950/40">
-              <ClipboardCheck className="h-5 w-5 text-sky-700 dark:text-sky-300" />
+            <span className="flex h-10 w-10 items-center justify-center border border-secondary/30 bg-secondary-lighter dark:border-secondary/25 dark:bg-secondary/15">
+              <ClipboardCheck className="h-5 w-5 text-secondary dark:text-secondary-light" />
             </span>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               Operate bookings
@@ -872,7 +873,7 @@ const DashboardPage: React.FC = () => {
           <div
             className={`mx-auto max-w-2xl ${pageSection} border-dashed border-slate-300 dark:border-slate-600`}
           >
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            <h2 className="font-display text-xl font-bold text-slate-900 dark:text-white">
               Welcome to EzyMed
             </h2>
             <p className="mt-2 text-slate-600 dark:text-slate-400">

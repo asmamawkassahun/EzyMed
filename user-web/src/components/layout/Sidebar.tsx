@@ -136,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="h-full px-4 py-1 overflow-y-auto scrollbar-hide bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-64">
+        <div className="h-full w-64 overflow-y-auto border-r-2 border-slate-900/10 bg-white/98 px-3 py-2 backdrop-blur-md scrollbar-hide dark:border-white/10 dark:bg-[#12101c]/96">
           <div className="flex justify-end px-2 py-2 lg:hidden">
             <button
               onClick={onClose}
@@ -147,7 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          <nav className="space-y-2 pt-1 lg:pt-3">
+          <nav className="space-y-1 pt-1 lg:pt-3">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -157,21 +157,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.path}
                   to={item.path}
                   onClick={handleItemClick}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 border-l-2 px-3 py-3 text-[15px] transition-all duration-200 ${
                     isActive
-                      ? "bg-primary text-white dark:bg-secondary"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ? "border-primary-600 bg-primary-600 font-semibold text-white shadow-[4px_4px_0_0_rgba(124,58,237,0.22)] dark:shadow-[4px_4px_0_0_rgba(167,139,250,0.2)]"
+                      : "border-transparent text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800/80"
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span className="font-medium">{item.label}</span>
                   {item.path === "/orders" && orderCount > 0 && (
-                    <span className="ml-auto bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center bg-secondary px-1 text-[10px] font-bold text-white">
                       {orderCount}
                     </span>
                   )}
                   {item.path === "/chat" && messageCount > 0 && (
-                    <span className="ml-auto bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center bg-primary-500 px-1 text-[10px] font-bold text-white">
                       {messageCount}
                     </span>
                   )}
