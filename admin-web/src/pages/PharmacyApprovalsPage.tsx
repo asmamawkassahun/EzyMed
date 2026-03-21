@@ -139,7 +139,7 @@ const PharmacyApprovalsPage: React.FC = () => {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-primary-600 via-primary-700 to-slate-900 p-6 text-white shadow-lg shadow-primary-900/15 sm:p-8 dark:border-slate-700/50">
           <div
-            className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_0%_100%,rgba(94,234,212,0.3),transparent_50%)]"
+            className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_0%_100%,rgba(167,139,250,0.35),transparent_50%)]"
             aria-hidden
           />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -248,7 +248,7 @@ const PharmacyApprovalsPage: React.FC = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-800 dark:bg-sky-900/30 dark:text-sky-300">
+                        <span className="rounded-full bg-primary-100 px-3 py-1 font-medium text-primary-900 dark:bg-primary-950/40 dark:text-primary-200">
                           License: {pharmacy.pharmacy_details?.license_number || "N/A"}
                         </span>
                         <span className="rounded-full bg-yellow-100 px-3 py-1 font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">

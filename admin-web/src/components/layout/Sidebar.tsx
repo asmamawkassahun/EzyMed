@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="h-full w-64 overflow-y-auto border-r border-slate-200/90 bg-white/95 px-4 py-6 backdrop-blur-md scrollbar-hide dark:border-slate-800 dark:bg-slate-950/90">
+        <div className="h-full w-64 overflow-y-auto border-r-2 border-slate-900/10 bg-white/95 px-3 py-6 backdrop-blur-md scrollbar-hide dark:border-white/10 dark:bg-[#12101c]/95">
           <div className="mb-6 flex items-center justify-end px-2">
             <button
               type="button"
@@ -55,10 +55,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.path}
                   to={item.path}
                   onClick={onClose}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
+                  className={`flex items-center gap-3 border-l-2 px-4 py-3 transition-all ${
                     isActive
-                      ? "bg-primary-600 font-semibold text-white shadow-md shadow-primary-900/20"
-                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/80"
+                      ? "border-primary-600 bg-primary-600 font-semibold text-white shadow-[4px_4px_0_0_rgba(124,58,237,0.25)]"
+                      : "border-transparent text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800/80"
                   }`}
                 >
                   <Icon className="h-5 w-5 shrink-0" />

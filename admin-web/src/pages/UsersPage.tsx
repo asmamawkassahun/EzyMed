@@ -81,7 +81,7 @@ const UsersPage: React.FC = () => {
       <div className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden">
         <div className="relative mb-8 overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-primary-600 via-primary-700 to-slate-900 p-6 text-white shadow-lg shadow-primary-900/15 sm:p-8 dark:border-slate-700/50">
           <div
-            className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_100%_0%,rgba(56,189,248,0.35),transparent_45%)]"
+            className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_100%_0%,rgba(244,63,94,0.35),transparent_45%)]"
             aria-hidden
           />
           <div className="relative">
@@ -169,7 +169,7 @@ const UsersPage: React.FC = () => {
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                           user.role_status === "approved"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+                            ? "bg-primary-100 text-primary-900 dark:bg-primary-950/50 dark:text-primary-200"
                             : user.role_status === "pending"
                               ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
                               : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"

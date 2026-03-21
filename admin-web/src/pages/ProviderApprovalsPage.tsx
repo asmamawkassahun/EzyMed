@@ -139,7 +139,7 @@ const ProviderApprovalsPage: React.FC = () => {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-primary-600 via-primary-700 to-slate-900 p-6 text-white shadow-lg shadow-primary-900/15 sm:p-8 dark:border-slate-700/50">
           <div
-            className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_100%_0%,rgba(56,189,248,0.35),transparent_45%)]"
+            className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_100%_0%,rgba(244,63,94,0.35),transparent_45%)]"
             aria-hidden
           />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -296,7 +296,7 @@ const ProviderApprovalsPage: React.FC = () => {
                                 href={documentUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-800 hover:bg-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/50"
+                                className="rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-900 hover:bg-primary-200 dark:bg-primary-950/40 dark:text-primary-200 dark:hover:bg-primary-950/60"
                               >
                                 Document {index + 1}
                               </a>

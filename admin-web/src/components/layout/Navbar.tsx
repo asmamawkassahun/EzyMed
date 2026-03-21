@@ -19,7 +19,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/90">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b-2 border-slate-900/10 bg-surface/95 backdrop-blur-md dark:border-white/10 dark:bg-surface-dark/95">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
           <div className="flex items-center gap-4">
@@ -33,11 +33,11 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 <Menu className="h-5 w-5 text-slate-700 dark:text-slate-300" />
               </button>
             )}
-            <Link to="/" className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-xs font-bold text-white shadow-sm shadow-primary-900/20">
-                HB
+            <Link to="/dashboard" className="flex items-center gap-2 group">
+              <span className="flex h-8 w-8 items-center justify-center bg-primary-600 text-[10px] font-bold text-white group-hover:bg-primary-700 transition-colors">
+                EZ
               </span>
-              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              <span className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 Admin
               </span>
             </Link>

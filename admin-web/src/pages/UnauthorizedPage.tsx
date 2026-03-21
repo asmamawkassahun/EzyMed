@@ -6,7 +6,7 @@ const UnauthorizedPage: React.FC = () => {
   return (
     <Layout>
       <div className="mx-auto max-w-lg py-16 text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30">
+        <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center border-2 border-red-300 bg-red-50 dark:border-red-800/60 dark:bg-red-950/40">
           <svg
             className="h-8 w-8 text-red-600 dark:text-red-400"
             fill="none"
@@ -21,15 +21,15 @@ const UnauthorizedPage: React.FC = () => {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+        <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
           Access denied
         </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
           You need admin privileges to access this panel.
         </p>
         <Link
           to="/login"
-          className="mt-8 inline-flex rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-primary-600/25 transition hover:bg-primary-700"
+          className="mt-10 inline-flex px-10 py-4 text-sm font-bold uppercase tracking-widest bg-primary-600 text-white hover:bg-primary-700 transition-colors"
         >
           Go to login
         </Link>

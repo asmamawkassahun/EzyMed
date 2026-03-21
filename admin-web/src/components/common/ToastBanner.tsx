@@ -32,9 +32,9 @@ const variantStyles: Record<
   },
   info: {
     container:
-      "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800/50 dark:bg-sky-950/30 dark:text-sky-200",
+      "border-primary-200 bg-primary-50 text-primary-900 dark:border-primary-800/50 dark:bg-primary-950/40 dark:text-primary-100",
     icon: Info,
-    iconClassName: "text-sky-600 dark:text-sky-400",
+    iconClassName: "text-primary-600 dark:text-primary-400",
   },
 };
 

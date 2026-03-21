@@ -35,9 +35,9 @@ const Dialog: React.FC<DialogProps> = ({
         onClick={onClose}
         aria-label="Close overlay"
       />
-      <div className="relative z-10 m-4 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-6 py-4 dark:border-slate-700">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+      <div className="relative z-10 m-4 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border-2 border-slate-300/90 bg-white shadow-2xl dark:border-slate-600 dark:bg-[#12101c]">
+        <div className="flex shrink-0 items-center justify-between border-b-2 border-slate-200/90 px-6 py-4 dark:border-slate-700">
+          <h2 className="font-display text-lg font-bold text-slate-900 dark:text-white">
             {title}
           </h2>
           <button

@@ -217,8 +217,8 @@ const DashboardPage: React.FC = () => {
       {
         label: "Users",
         data: userGrowthData,
-        borderColor: "#059669",
-        backgroundColor: "rgba(5, 150, 105, 0.18)",
+        borderColor: "#7c3aed",
+        backgroundColor: "rgba(124, 58, 237, 0.18)",
         fill: true,
       },
     ],
@@ -230,8 +230,8 @@ const DashboardPage: React.FC = () => {
       {
         label: "Prescriptions",
         data: prescriptionGrowthData,
-        borderColor: "#10b981",
-        backgroundColor: "rgba(16, 185, 129, 0.16)",
+        borderColor: "#8b5cf6",
+        backgroundColor: "rgba(139, 92, 246, 0.16)",
         fill: true,
       },
     ],
@@ -246,11 +246,11 @@ const DashboardPage: React.FC = () => {
         label: "Active Users",
         data: pharmacyData,
         backgroundColor: [
-          "rgba(5, 150, 105, 0.88)",
-          "rgba(14, 165, 233, 0.85)",
-          "rgba(16, 185, 129, 0.82)",
-          "rgba(4, 120, 87, 0.9)",
-          "rgba(56, 189, 248, 0.8)",
+          "rgba(124, 58, 237, 0.88)",
+          "rgba(244, 63, 94, 0.85)",
+          "rgba(167, 139, 250, 0.82)",
+          "rgba(109, 40, 217, 0.9)",
+          "rgba(232, 121, 249, 0.8)",
         ],
         borderRadius: 10,
       },
@@ -289,9 +289,9 @@ const DashboardPage: React.FC = () => {
           100 - selectedRangeData.platformMetrics.errorRate,
           (selectedRangeData.platformMetrics.satisfaction / 5) * 100,
         ],
-        borderColor: "#0ea5e9",
-        backgroundColor: "rgba(14, 165, 233, 0.2)",
-        pointBackgroundColor: "#0ea5e9",
+        borderColor: "#f43f5e",
+        backgroundColor: "rgba(244, 63, 94, 0.2)",
+        pointBackgroundColor: "#f43f5e",
       },
     ],
   };
@@ -318,10 +318,10 @@ const DashboardPage: React.FC = () => {
       {
         data: selectedRangeData.topHospitals.map((item) => item.users),
         backgroundColor: [
-          "#059669",
-          "#0ea5e9",
-          "#10b981",
-          "#047857",
+          "#7c3aed",
+          "#f43f5e",
+          "#a78bfa",
+          "#6d28d9",
           "#64748b",
         ],
         borderWidth: 0,
@@ -352,8 +352,8 @@ const DashboardPage: React.FC = () => {
       {
         label: "Messages",
         data: scopedMessageData,
-        borderColor: "#0ea5e9",
-        backgroundColor: "rgba(14, 165, 233, 0.16)",
+        borderColor: "#f43f5e",
+        backgroundColor: "rgba(244, 63, 94, 0.16)",
         fill: true,
       },
     ],
@@ -373,14 +373,14 @@ const DashboardPage: React.FC = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-primary-600 via-primary-700 to-slate-900 p-6 text-white shadow-lg shadow-primary-900/15 sm:flex-1 dark:border-slate-700/50">
             <div
-              className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_100%_0%,rgba(56,189,248,0.35),transparent_45%)]"
+              className="pointer-events-none absolute inset-0 opacity-35 bg-[radial-gradient(circle_at_100%_0%,rgba(244,63,94,0.35),transparent_45%)]"
               aria-hidden
             />
             <div className="relative">
               <p className="text-xs font-semibold uppercase tracking-widest text-primary-100/90">
                 Overview
               </p>
-              <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+              <h1 className="mt-1 font-display text-2xl font-bold tracking-tight sm:text-3xl">
                 Dashboard
               </h1>
               <p className="mt-2 text-sm text-white/85">
@@ -423,39 +423,39 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-linear-to-br from-emerald-600 to-emerald-800 p-6 text-white shadow-md">
+          <div className="rounded-2xl bg-linear-to-br from-primary-800 to-primary-950 p-6 text-white shadow-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-emerald-100">
+                <p className="text-sm font-medium text-primary-200">
                   Prescriptions
                 </p>
                 <p className="mt-2 text-3xl font-bold tabular-nums">
                   {stats?.prescriptions || 0}
                 </p>
               </div>
-              <FileText className="h-8 w-8 text-emerald-200" />
+              <FileText className="h-8 w-8 text-primary-300" />
             </div>
             <div className="mt-4 flex items-center gap-1">
               <ArrowUp className="h-4 w-4" />
-              <span className="text-sm text-emerald-100">
+              <span className="text-sm text-primary-200">
                 +8.3% from last period
               </span>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-linear-to-br from-sky-600 to-sky-800 p-6 text-white shadow-md">
+          <div className="rounded-2xl bg-linear-to-br from-secondary to-[#be123c] p-6 text-white shadow-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-sky-100">Messages</p>
+                <p className="text-sm font-medium text-white/90">Messages</p>
                 <p className="mt-2 text-3xl font-bold tabular-nums">
                   {stats?.messages || 0}
                 </p>
               </div>
-              <MessageSquare className="h-8 w-8 text-sky-200" />
+              <MessageSquare className="h-8 w-8 text-white/80" />
             </div>
             <div className="mt-4 flex items-center gap-1">
               <ArrowUp className="h-4 w-4" />
-              <span className="text-sm text-sky-100">
+              <span className="text-sm text-white/90">
                 +23.1% from last period
               </span>
             </div>
@@ -492,7 +492,7 @@ const DashboardPage: React.FC = () => {
                 </h3>
               </div>
               <span
-                className={`text-sm font-semibold ${userGrowthDelta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}
+                className={`text-sm font-semibold ${userGrowthDelta >= 0 ? "text-primary-600 dark:text-primary-400" : "text-red-600 dark:text-red-400"}`}
               >
                 {userGrowthDelta >= 0 ? "+" : ""}
                 {userGrowthDelta.toFixed(1)}%
@@ -507,12 +507,12 @@ const DashboardPage: React.FC = () => {
           <div className="rounded-2xl border border-slate-200/90 bg-white/90 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <FileText className="h-6 w-6 text-emerald-600" />
+                <FileText className="h-6 w-6 text-primary-600" />
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   Prescription activity
                 </h3>
               </div>
-              <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
                 +8.3%
               </span>
             </div>
@@ -536,7 +536,7 @@ const DashboardPage: React.FC = () => {
           {/* Performance Indicators */}
           <div className="rounded-2xl border border-slate-200/90 bg-white/90 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 lg:col-span-1">
             <div className="mb-6 flex items-center gap-3">
-              <Activity className="h-6 w-6 text-sky-600" />
+              <Activity className="h-6 w-6 text-secondary" />
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 Performance
               </h3>
@@ -550,13 +550,13 @@ const DashboardPage: React.FC = () => {
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-400">
               <p>
                 Uptime:{" "}
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="font-semibold text-primary-600 dark:text-primary-400">
                   {selectedRangeData.platformMetrics.uptime}%
                 </span>
               </p>
               <p>
                 Response:{" "}
-                <span className="font-semibold text-sky-600 dark:text-sky-400">
+                <span className="font-semibold text-secondary dark:text-secondary-light">
                   {selectedRangeData.platformMetrics.responseTime}ms
                 </span>
               </p>
@@ -615,12 +615,12 @@ const DashboardPage: React.FC = () => {
           <div className="rounded-2xl border border-slate-200/90 bg-white/90 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <MessageSquare className="h-6 w-6 text-sky-600" />
+                <MessageSquare className="h-6 w-6 text-secondary" />
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   Message activity
                 </h3>
               </div>
-              <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="text-sm font-semibold text-secondary dark:text-secondary-light">
                 +23.1%
               </span>
             </div>
