@@ -78,17 +78,17 @@ const ProductManagementPage: React.FC = () => {
 
       if (editingProduct) {
         await updateMyProduct(editingProduct.id, formDataToSend);
-        toast.success("Product updated successfully.");
+        toast.success("Medicine updated successfully.");
       } else {
         await createMyProduct(formDataToSend);
-        toast.success("Product created successfully.");
+        toast.success("Medicine created successfully.");
       }
 
       setShowDialog(false);
       resetForm();
     } catch (error) {
-      console.error("Failed to save product:", error);
-      toast.error("Failed to save product. Please try again.");
+      console.error("Failed to save medicine:", error);
+      toast.error("Failed to save medicine. Please try again.");
     } finally {
       setSavingProduct(false);
     }
@@ -108,14 +108,14 @@ const ProductManagementPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
+    if (window.confirm("Are you sure you want to delete this medicine?")) {
       try {
         setDeletingProductId(id);
         await deleteMyProduct(id);
-        toast.success("Product deleted successfully.");
+        toast.success("Medicine deleted successfully.");
       } catch (error) {
-        console.error("Failed to delete product:", error);
-        toast.error("Failed to delete product. Please try again.");
+        console.error("Failed to delete medicine:", error);
+        toast.error("Failed to delete medicine. Please try again.");
       } finally {
         setDeletingProductId(null);
       }
@@ -147,7 +147,7 @@ const ProductManagementPage: React.FC = () => {
   );
 
   const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/25 dark:border-slate-600 dark:bg-slate-950/50 dark:text-white";
+    "w-full rounded-2xl border border-slate-200/90 bg-slate-50/50 px-4 py-3 text-slate-900 outline-none transition-all focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700/50 dark:bg-slate-950/40 dark:text-white dark:focus:border-primary-500/50";
 
   if (profile?.role !== "pharmacy") {
     return (
@@ -160,7 +160,7 @@ const ProductManagementPage: React.FC = () => {
             Access denied
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            You need pharmacy privileges to manage products.
+            You need pharmacy privileges to manage medicines.
           </p>
         </div>
       </Layout>
@@ -226,7 +226,7 @@ const ProductManagementPage: React.FC = () => {
                   Pharmacy catalog
                 </p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-                  Product management
+                  Medicine management
                 </h1>
                 <p className="mt-2 max-w-xl text-sm text-white/85">
                   Create, search, and maintain inventory—pricing and stock stay
@@ -240,7 +240,7 @@ const ProductManagementPage: React.FC = () => {
               className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-primary-800 shadow-md transition hover:bg-primary-50"
             >
               <Plus className="h-5 w-5" aria-hidden />
-              Add product
+              Add Medicine
             </button>
           </div>
         </div>
@@ -294,12 +294,12 @@ const ProductManagementPage: React.FC = () => {
             />
             <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
               {products.length === 0
-                ? "No products yet"
+                ? "No medicines yet"
                 : "No matches for that search"}
             </h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               {products.length === 0
-                ? "Add your first product to appear in the shop."
+                ? "Add your first medicine to appear in the shop."
                 : "Try a different keyword or clear the search."}
             </p>
             {products.length === 0 && (
@@ -309,7 +309,7 @@ const ProductManagementPage: React.FC = () => {
                 className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary-600/25 transition hover:bg-primary-700"
               >
                 <Plus className="h-4 w-4" />
-                Add product
+                Add Medicine
               </button>
             )}
           </div>
@@ -394,12 +394,12 @@ const ProductManagementPage: React.FC = () => {
             setShowDialog(false);
             resetForm();
           }}
-          title={editingProduct ? "Edit product" : "Add new product"}
+          title={editingProduct ? "Edit medicine" : "Add new medicine"}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Product title *
+                Medicine title *
               </label>
               <input
                 type="text"
@@ -471,7 +471,7 @@ const ProductManagementPage: React.FC = () => {
 
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Product image
+                Medicine image
               </label>
               <input
                 type="file"
@@ -486,29 +486,29 @@ const ProductManagementPage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 dark:border-slate-800/80 mt-4">
               <button
                 type="button"
                 onClick={() => {
                   setShowDialog(false);
                   resetForm();
                 }}
-                className="flex-1 cursor-pointer rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="flex-1 cursor-pointer rounded-2xl border border-slate-200 py-3.5 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={savingProduct}
-                className="flex-1 cursor-pointer rounded-xl bg-primary-600 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-60"
+                className="flex-1 cursor-pointer rounded-2xl bg-linear-to-r from-primary-600 to-primary-700 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition-all hover:shadow-primary-600/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 {savingProduct
                   ? editingProduct
                     ? "Updating…"
                     : "Creating…"
                   : editingProduct
-                    ? "Update product"
-                    : "Create product"}
+                    ? "Update medicine"
+                    : "Create medicine"}
               </button>
             </div>
           </form>

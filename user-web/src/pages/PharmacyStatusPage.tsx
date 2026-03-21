@@ -2,10 +2,18 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import { useAuth } from "../contexts/AuthContext";
-import { Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Clock, CheckCircle, XCircle, AlertCircle, LogOut } from "lucide-react";
 
 const PharmacyPendingApprovalPage: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   
   const status = profile?.role_status || "pending";
   
@@ -87,12 +95,13 @@ const PharmacyPendingApprovalPage: React.FC = () => {
               </p>
             </div>
             <div className="pt-2">
-              <Link
-                to="/"
-                className="inline-flex items-center justify-center text-primary-600 dark:text-secondary font-semibold hover:underline"
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 text-primary-600 dark:text-secondary font-semibold hover:underline"
               >
-                Return to Home
-              </Link>
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
             </div>
           </div>
         );

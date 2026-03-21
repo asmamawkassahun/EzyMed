@@ -23,20 +23,30 @@ const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden m-4 z-10 flex flex-col">
-        <div className="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-start overflow-y-auto pt-20 pb-8 px-4">
+      <div 
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity" 
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl border border-slate-200/80 dark:border-slate-800/60 flex flex-col animate-rise-in transform-gpu">
+        <div className="shrink-0 bg-slate-50/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800/80 px-7 py-5 flex items-center justify-between rounded-t-3xl">
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            {title}
+          </h2>
           <button
             onClick={onClose}
-            className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+            className="cursor-pointer p-2 hover:bg-slate-200 dark:hover:bg-slate-700/60 rounded-xl transition-all hover:rotate-90 duration-300 group"
             aria-label="Close dialog"
           >
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <X className="w-5 h-5 text-slate-500 group-hover:text-slate-900 dark:text-slate-400 dark:group-hover:text-white" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-hide">{children}</div>
+        
+        <div className="flex-1 px-7 py-6 overflow-visible">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(url, serviceKey);
 
 const run = async () => {
   const email = process.env.SEED_ADMIN_EMAIL || "admin@ezymed.local";
-  const password = process.env.SEED_ADMIN_PASS || "Healthbridge@123";
+  const password = process.env.SEED_ADMIN_PASS || "Ezymed@123";
 
   console.log("Creating admin user:", email);
   const { data, error } = await supabaseAdmin.auth.admin.createUser({

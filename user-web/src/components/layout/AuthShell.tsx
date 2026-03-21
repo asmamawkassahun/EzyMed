@@ -52,7 +52,6 @@ const AuthShell: React.FC<AuthShellProps> = ({ children, title, subtitle }) => {
           <p className="font-mono text-[10px] tracking-normal normal-case text-white/55 leading-relaxed">
             Consult → Rx → Drug Finder → Vitals → Follow-up
           </p>
-          <p>Addis Ababa pilot · JWT auth</p>
         </div>
       </div>
 

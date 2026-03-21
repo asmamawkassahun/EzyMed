@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     {
       path: "/manage/products",
       icon: ShoppingBag,
-      label: "Manage Products",
+      label: "Manage Medicines",
       roles: ["pharmacy", "admin"],
     },
     {

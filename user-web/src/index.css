@@ -96,20 +96,9 @@ button:disabled {
   display: none;
 }
 
-/* Global smooth scrolling with hidden scrollbars */
+/* Global smooth scrolling */
 html {
   scroll-behavior: smooth;
-}
-
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
 }
 
 @keyframes soft-float {

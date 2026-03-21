@@ -54,7 +54,7 @@ const HomePage: React.FC = () => {
       quote:
         "I want one place to talk to my doctor, know where my medicine is in stock, and log how I’m doing between visits.",
       name: "Patient journey",
-      role: "Pilot design target",
+      role: "User design target",
     },
     {
       quote:
@@ -96,7 +96,7 @@ const HomePage: React.FC = () => {
             <div className="flex items-center gap-3 mb-8">
               <span className="h-px w-12 bg-primary-600 dark:bg-primary-400" />
               <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-primary-700 dark:text-primary-300">
-                EzyMed MVP
+                EzyMed
               </span>
             </div>
 
@@ -113,7 +113,7 @@ const HomePage: React.FC = () => {
             </p>
 
             <p className="mt-4 text-sm font-medium text-slate-700 dark:text-slate-300 border-l-2 border-secondary pl-4 max-w-xl">
-              Pilot: Addis Ababa · Responsive web (phone, tablet, desktop)
+              Reduce gaps between consult, Rx, and pickup.
             </p>
 
             <div className="mt-10 flex flex-wrap gap-2">
@@ -158,9 +158,9 @@ const HomePage: React.FC = () => {
           <div className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
               { k: "01", v: "3 services", d: "One product surface" },
-              { k: "02", v: "Pilot", d: "Addis Ababa" },
-              { k: "03", v: "4 roles", d: "Patient → admin" },
-              { k: "04", v: "JWT", d: "Secure sessions" },
+              { k: "02", v: "Accessible", d: "Easy to use" },
+              { k: "03", v: "Patient First", d: "Patient → Doctor / Pharmacy" },
+              { k: "04", v: "Security", d: "Secure sessions" },
             ].map((cell) => (
               <div
                 key={cell.k}
@@ -212,7 +212,7 @@ const HomePage: React.FC = () => {
                 Fewer gaps between consult, Rx, and pickup.
               </h2>
               <p className="mt-6 text-sm text-white/85 leading-relaxed flex-1">
-                The MVP ties three problems into one loop: access to doctors,
+                EzyMed ties three problems into one loop: access to doctors,
                 finding medicines, and monitoring after treatment.
               </p>
               <div className="mt-8 pt-6 border-t border-white/20 font-mono text-[10px] text-white/60">
@@ -352,8 +352,7 @@ const HomePage: React.FC = () => {
                 </span>
               </div>
               <p className="text-sm text-violet-200/80 leading-relaxed">
-                Telehealth, Drug Finder, and remote monitoring—MVP pilot in Addis
-                Ababa.
+                Telehealth, Drug Finder, and remote monitoring.
               </p>
               <div className="flex gap-2 mt-6">
                 {[
