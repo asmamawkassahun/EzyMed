@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": {
-        target: "https://healthbridge-ayx4.onrender.com",
+        target: "https://ezymed-ayx4.onrender.com",
         changeOrigin: true,
       },
     },

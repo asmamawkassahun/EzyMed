@@ -131,7 +131,7 @@ export const register = async (req: Request, res: Response) => {
     const emailRedirectTo =
       process.env.AUTH_REDIRECT_URL ||
       process.env.FRONTEND_URL ||
-      "https://healthbridge.vercel.app/login";
+      "https://ezymed.vercel.app/login";
 
     // Use Supabase native verification email flow only.
     const { error: otpError } = await supabase.auth.signInWithOtp({
@@ -211,7 +211,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       process.env.AUTH_RESET_REDIRECT_URL ||
       process.env.AUTH_REDIRECT_URL ||
       process.env.FRONTEND_URL ||
-      "https://healthbridge.vercel.app/reset-password";
+      "https://ezymed.vercel.app/reset-password";
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,

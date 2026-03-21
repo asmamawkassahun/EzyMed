@@ -5,7 +5,7 @@ const API_ORIGIN =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
     /\/+$/,
     "",
-  ) || "https://healthbridge-ayx4.onrender.com";
+  ) || "https://ezymed-ayx4.onrender.com";
 
 let refreshRequest: Promise<string | null> | null = null;
 

@@ -49,8 +49,8 @@ app.use(
       "http://localhost:3000",
       "http://localhost:5000",
       "http://localhost:3001",
-      "https://healthbridge-alpha.vercel.app",
-      "https://healthbridge-admin.vercel.app"
+      "https://ezymed-alpha.vercel.app",
+      "https://ezymed-admin.vercel.app"
     ],
     credentials: true,
   }),
