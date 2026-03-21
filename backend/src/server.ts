@@ -49,7 +49,8 @@ app.use(
       "http://localhost:3000",
       "http://localhost:5000",
       "http://localhost:3001",
-      "https://ezymed-alpha.vercel.app",
+      "https://ezymed-user.vercel.app",
+      "https://ezymed.vercel.app",
       "https://ezymed-admin.vercel.app"
     ],
     credentials: true,
